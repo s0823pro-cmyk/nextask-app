@@ -1,9 +1,9 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { SidebarNav } from '@/components/sidebar-nav';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AppLayout } from '@/components/app-layout';
 
 export const metadata: Metadata = {
   title: 'DailyFlow | スマートなタスク管理',
@@ -24,14 +24,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <SidebarProvider defaultOpen={true}>
-            <div className="flex min-h-screen w-full">
-              <SidebarNav />
-              <SidebarInset className="bg-background">
-                {children}
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
+          <AppLayout>
+            {children}
+          </AppLayout>
           <Toaster />
         </FirebaseClientProvider>
       </body>
