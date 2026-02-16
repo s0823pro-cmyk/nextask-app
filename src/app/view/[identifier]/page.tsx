@@ -3,12 +3,13 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search } from "lucide-react"
 import { format } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Task } from "@/lib/types"
@@ -25,6 +26,7 @@ const statusConfig = {
 export default function PublicClientView() {
   const { identifier } = useParams<{ identifier: string }>()
   const db = useFirestore()
+  const [searchQuery, setSearchQuery] = React.useState("")
 
   const tasksQuery = useMemoFirebase(() => {
     return collection(db, 'client_task_views', identifier, 'tasks');
@@ -40,27 +42,69 @@ export default function PublicClientView() {
   }
 
   const tasks = tasksData || []
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
-  const pendingTasks = tasks.filter(t => t.status === 'pending')
-  const doneTasks = tasks.filter(t => t.status === 'done')
+
+  // フィルタリングロジック
+  const filteredTasks = tasks.filter(t => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    if (!searchLower) return true;
+
+    // タイトルと説明の検索
+    const matchText = t.title.toLowerCase().includes(searchLower) || 
+                     t.description.toLowerCase().includes(searchLower);
+    
+    if (matchText) return true;
+
+    // 日付の検索 (2/17 や 2025.2.17 などの入力を 2-17, 2025-2-17 に正規化)
+    const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
+    const dateParts = normalizedSearch.split('-');
+    const paddedSearch = dateParts.map(part => {
+      if (/^\d{1,2}$/.test(part)) {
+        return part.padStart(2, '0');
+      }
+      return part;
+    }).join('-');
+
+    const matchDate = t.receptionDate?.includes(paddedSearch) || 
+                     t.dueDate?.includes(paddedSearch) ||
+                     t.receptionDate?.includes(normalizedSearch) ||
+                     t.dueDate?.includes(normalizedSearch);
+
+    return matchDate;
+  });
+
+  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
+  const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
+  const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-primary">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <LayoutDashboard className="h-6 w-6" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-primary">
+              <div className="bg-primary/10 p-2 rounded-xl">
+                <LayoutDashboard className="h-6 w-6" />
+              </div>
+              <span className="font-bold text-2xl tracking-tight">DailyFlow Portal</span>
             </div>
-            <span className="font-bold text-2xl tracking-tight">DailyFlow Portal</span>
+            <h1 className="text-4xl font-black tracking-tighter mt-4">業務進捗ダッシュボード</h1>
+            <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter mt-4">業務進捗ダッシュボード</h1>
-          <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
+
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="キーワード・日付で検索..." 
+              className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="bg-muted/50 p-1 mb-8">
-            <TabsTrigger value="all" className="font-bold">すべて ({tasks.length})</TabsTrigger>
+            <TabsTrigger value="all" className="font-bold">すべて ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="font-bold">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="font-bold">保留 ({pendingTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="font-bold">完了 ({doneTasks.length})</TabsTrigger>
@@ -68,11 +112,11 @@ export default function PublicClientView() {
 
           <TabsContent value="all">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
               ))}
             </div>
-            {tasks.length === 0 && <EmptyState />}
+            {filteredTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
           <TabsContent value="in_progress">
@@ -81,7 +125,7 @@ export default function PublicClientView() {
                 <PublicTaskCard key={task.id} task={task} />
               ))}
             </div>
-            {inProgressTasks.length === 0 && <EmptyState />}
+            {inProgressTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
           <TabsContent value="pending">
@@ -90,7 +134,7 @@ export default function PublicClientView() {
                 <PublicTaskCard key={task.id} task={task} />
               ))}
             </div>
-            {pendingTasks.length === 0 && <EmptyState />}
+            {pendingTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
           <TabsContent value="done">
@@ -99,7 +143,7 @@ export default function PublicClientView() {
                 <PublicTaskCard key={task.id} task={task} />
               ))}
             </div>
-            {doneTasks.length === 0 && <EmptyState />}
+            {doneTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
         </Tabs>
       </div>
@@ -187,13 +231,19 @@ function PublicTaskCard({ task }: { task: Task }) {
   )
 }
 
-function EmptyState() {
+function EmptyState({ isSearching }: { isSearching: boolean }) {
   return (
     <div className="text-center py-32 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
       <div className="bg-background w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-        <Clock className="w-8 h-8 text-muted-foreground opacity-20" />
+        {isSearching ? (
+          <Search className="w-8 h-8 text-muted-foreground opacity-20" />
+        ) : (
+          <Clock className="w-8 h-8 text-muted-foreground opacity-20" />
+        )}
       </div>
-      <p className="text-muted-foreground font-medium">現在、表示できるタスクはありません。</p>
+      <p className="text-muted-foreground font-medium">
+        {isSearching ? "一致するタスクが見つかりませんでした。" : "現在、表示できるタスクはありません。"}
+      </p>
     </div>
   )
 }
