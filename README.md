@@ -50,7 +50,8 @@ git push -u origin main
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
 3. 作成した GitHub リポジトリを選択。
 4. **設定の入力**:
-   - **ライブブランチ (Live Branch)**: `main` と入力してください。
+   - **ライブブランチ (Live Branch)**: `main` と入力。
+   - **アプリのルートディレクトリ (App Root Directory)**: 空欄（または `/`）のままでOK。
 5. **リージョンの選択**:
    - 第1候補: **`asia-northeast1` (Tokyo)**
    - 第2候補: **`asia-east1` (Taiwan)** ← 東京がない場合はこちらがおすすめ
