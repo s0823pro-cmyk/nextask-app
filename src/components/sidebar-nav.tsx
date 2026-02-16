@@ -52,8 +52,9 @@ export function SidebarNav() {
         name: data.name,
         color: data.color,
       }
-      setEditingClient(null)
+      // UIを閉じることを優先。ステータスクリアはonOpenChangeで行う。
       saveClientFirestore(db, updatedClient)
+      setEditingClient(null)
       toast({ title: "取引先を更新しました" })
     } else {
       const newClient: Client = {

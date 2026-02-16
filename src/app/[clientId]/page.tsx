@@ -44,7 +44,7 @@ export default function ClientDashboard() {
   const handleCreateTask = (data: Partial<Task>) => {
     if (!client) return;
     
-    // UIを先に閉じる
+    // ダイアログを閉じる指示のみを出す
     setIsCreateOpen(false);
     
     const now = new Date().toISOString();
@@ -61,7 +61,6 @@ export default function ClientDashboard() {
       updatedAt: now,
     }
     
-    // 非ブロッキングで保存
     saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
     toast({ title: "タスクを作成しました" });
   }
@@ -69,7 +68,9 @@ export default function ClientDashboard() {
   const handleUpdateTask = (data: Partial<Task>) => {
     if (!editingTask || !client) return;
     
-    // UIを先に閉じる
+    // ダイアログを閉じる指示のみを出す。
+    // editingTaskをここでnullにするとダイアログの中身が即座に消えてしまい、
+    // クローズ処理が正常に終了しなくなるため、onOpenChangeで処理する。
     setIsEditOpen(false);
     
     const updatedTask: Task = { 
@@ -78,9 +79,7 @@ export default function ClientDashboard() {
       updatedAt: new Date().toISOString() 
     }
     
-    // 非ブロッキングで保存
     saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
-    setEditingTask(null);
     toast({ title: "タスクを更新しました" });
   }
 
@@ -224,7 +223,11 @@ export default function ClientDashboard() {
 
       <Dialog open={isEditOpen} onOpenChange={(open) => {
         setIsEditOpen(open)
-        if (!open) setEditingTask(null)
+        if (!open) {
+          // ダイアログが閉じられたときにステータスをクリアする。
+          // これにより閉じアニメーション中にコンテンツが消えるのを防ぐ。
+          setEditingTask(null)
+        }
       }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
