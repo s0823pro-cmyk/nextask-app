@@ -1,28 +1,42 @@
+
 'use client';
 
 import React, { useMemo, useEffect, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
+/**
+ * クライアントサイドでFirebaseを初期化し、認証状態を管理するプロバイダー。
+ */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
+    // クライアントサイドでFirebaseサービスを初期化
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   useEffect(() => {
-    // ユーザーが認証されていない場合、自動的に匿名ログインを実行します。
-    if (firebaseServices.auth) {
-      signInAnonymously(firebaseServices.auth).catch((error) => {
-        console.error("Anonymous sign-in failed:", error);
-      });
-    }
-  }, [firebaseServices.auth]);
+    const { auth } = firebaseServices;
+    if (!auth) return;
+
+    // 認証状態の変更を監視
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // ログインしていない場合のみ、共有URL閲覧のために匿名ログインを実行
+      if (!user) {
+        signInAnonymously(auth).catch((error) => {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error("Anonymous sign-in failed:", error);
+          }
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [firebaseServices]);
 
   return (
     <FirebaseProvider
