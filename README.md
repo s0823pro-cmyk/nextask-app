@@ -2,29 +2,49 @@
 
 NexTaskを世界中に公開し、友人が401エラーなしで閲覧できるようにするための手順書です。
 
-## 🚀 デプロイ手順（ステップ・バイ・ステップ）
+## 🚀 GitHub へのコード送信手順
 
-### 1. コードをGitHubにプッシュする
-Firebase App HostingはGitHubのリポジトリを監視して自動で公開を行います。
-- 自分のGitHubアカウントに新しいリポジトリ（例：`nextask-app`）を作成します。
-- この開発環境（Firebase Studio）にあるコードをそのリポジトリにプッシュしてください。
+Firebase App Hosting を利用するには、まずコードを GitHub に保存する必要があります。
 
-### 2. FirebaseコンソールでApp Hostingを開始
+### 1. GitHub リポジトリの準備
+- [GitHub](https://github.com/) にサインイン。
+- 「New repository」から新しいリポジトリ（例：`nextask-app`）を **Public** または **Private** で作成。
+- 作成後の画面に表示されるリポジトリの URL（`https://github.com/ユーザー名/リポジトリ名.git`）をコピー。
+
+### 2. 開発環境のターミナルで実行
+開発環境（Firebase Studio）の下部にあるターミナルを開き、以下のコマンドを順に実行します。
+
+```bash
+# Gitの初期化
+git init
+
+# ファイルのステージング
+git add .
+
+# コミット（記録）
+git commit -m "initial version of nextask"
+
+# メインブランチの指定
+git branch -M main
+
+# リモートリポジトリの紐付け（URLはコピーしたものに書き換え）
+git remote add origin https://github.com/あなたの名前/nextask-app.git
+
+# GitHubへ送信
+git push -u origin main
+```
+
+---
+
+## 🚀 デプロイ手順（Firebase App Hosting）
+
+コードが GitHub に上がったら、以下の手順で公開します。
+
 1. [Firebase Console](https://console.firebase.google.com/) にアクセス。
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
-
-### 3. GitHubとの連携
-1. 「GitHubに接続」をクリックし、リポジトリへのアクセスを許可します。
-2. 作成した NexTask のリポジトリを選択します。
-
-### 4. バックエンドの設定
-1. 「バックエンド ID」を入力（例：`nextask-backend`）。
-2. 「デプロイ設定」はデフォルトのままで「次へ」をクリック。
-3. 最後に **「完了」** をクリックします。
-
-### 5. 自動ビルドと公開
-- 数分（3〜5分程度）待つと、ビルドが完了し、本番用URLが発行されます。
-- `https://[プロジェクト名].web.app` のような形式のURLが表示されたら成功です！
+3. 作成した GitHub リポジトリを選択。
+4. 設定はデフォルトのままで「デプロイ」を実行。
+5. 完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
 
 ---
 
@@ -41,9 +61,3 @@ Firebase App HostingはGitHubのリポジトリを監視して自動で公開を
 ### 友人が開こうとすると 401 エラーが出る
 - **原因**: 開発環境のURL（`workstations.cloud.google.com` を含むもの）を共有しています。
 - **解決策**: App Hosting のダッシュボードに表示されている、**`.web.app` で終わる本番用URL**を共有してください。
-
-### 画面が真っ白になる
-- **解決策**: Firebaseコンソールの **Firestore > ルール** を確認し、`firestore.rules` が正しく適用されているか確認してください。
-
-### ログインできない
-- **解決策**: Google認証を有効にする際、「プロジェクトのサポートメール」が正しく設定されているか確認してください。
