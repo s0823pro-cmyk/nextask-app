@@ -94,7 +94,8 @@ export default function Home() {
 
     return (allTasks || []).filter(t => {
       const matchText = (t.title?.toLowerCase() || "").includes(searchLower) || 
-                       (t.description?.toLowerCase() || "").includes(searchLower);
+                       (t.description?.toLowerCase() || "").includes(searchLower) ||
+                       (t.constructionType?.toLowerCase() || "").includes(searchLower);
       
       if (matchText) return true;
 
@@ -169,7 +170,7 @@ export default function Home() {
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="全件からタスクを検索..." 
+            placeholder="タスク、日付、工事内容で検索..." 
             className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
