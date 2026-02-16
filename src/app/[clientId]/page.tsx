@@ -33,6 +33,16 @@ export default function ClientDashboard() {
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
 
+  // ダイアログが完全に閉じてからデータをクリアするためのEffect
+  React.useEffect(() => {
+    if (!isEditOpen) {
+      const timer = setTimeout(() => {
+        setEditingTask(null)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isEditOpen])
+
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
@@ -208,12 +218,7 @@ export default function ClientDashboard() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isEditOpen} onOpenChange={(open) => {
-        setIsEditOpen(open)
-        if (!open) {
-          setEditingTask(null)
-        }
-      }}>
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>タスクを編集</DialogTitle>

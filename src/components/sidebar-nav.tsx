@@ -45,6 +45,16 @@ export function SidebarNav() {
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
 
+  // ダイアログが完全に閉じてからデータをクリアするためのEffect
+  React.useEffect(() => {
+    if (!isSettingsOpen) {
+      const timer = setTimeout(() => {
+        setEditingClient(null)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isSettingsOpen])
+
   const handleAddOrUpdateClient = (data: { name: string; color: string }) => {
     if (editingClient) {
       const updatedClient: Client = {
@@ -52,9 +62,9 @@ export function SidebarNav() {
         name: data.name,
         color: data.color,
       }
-      // UIを閉じることを優先。ステータスクリアはonOpenChangeで行う。
       saveClientFirestore(db, updatedClient)
-      setEditingClient(null)
+      // 状態変更はEffectに任せる
+      setIsSettingsOpen(false)
       toast({ title: "取引先を更新しました" })
     } else {
       const newClient: Client = {
@@ -127,10 +137,7 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Dialog open={isSettingsOpen} onOpenChange={(open) => {
-              setIsSettingsOpen(open)
-              if (!open) setEditingClient(null)
-            }}>
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <DialogTrigger asChild>
                 <SidebarMenuButton tooltip="設定">
                   <Settings className="h-4 w-4" />
