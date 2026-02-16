@@ -49,8 +49,11 @@ git push -u origin main
 1. [Firebase Console](https://console.firebase.google.com/) にアクセス。
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
 3. 作成した GitHub リポジトリを選択。
-4. 設定はデフォルトのままで「デプロイ」を実行。
-5. 数分後、完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
+4. **リージョンの選択**:
+   - **`asia-northeast1` (Tokyo)** または **`asia-northeast2` (Osaka)** を選択してください。
+   - これにより、日本国内からのアクセスが最速になります。
+5. 設定はデフォルトのままで「デプロイ」を実行。
+6. 数分後、完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
 
 ---
 
