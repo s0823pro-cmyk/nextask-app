@@ -10,41 +10,36 @@ Firebase App Hosting を利用するには、Firebase プロジェクトを **�
 
 ## 🚀 GitHub へのコード送信手順（最重要）
 
-「ブランチ名が存在しない」というエラーが出る場合、GitHubへの送信がまだ完了していません。以下の手順を**一行ずつ**、ゆっくり実行してください。
+「Repository not found」というエラーが出る場合、登録したURLが間違っています。以下の手順でやり直してください。
 
-### 1. GitHub リポジトリの準備
-- GitHub で「空のリポジトリ」を作成します。
-- **重要**: README、.gitignore、License の追加には**絶対チェックを入れない**でください。
-- リポジトリの URL（`https://github.com/.../nextask-app.git`）をコピーします。
+### 1. GitHub リポジトリのURLをコピー
+- GitHub で作成したリポジトリのページを開きます。
+- 緑色の「<> Code」ボタンを押し、`https://github.com/.../nextask-app.git` というURLをコピーします。
 
-### 2. 開発環境のターミナルで実行
-画面下部の「Terminal」タブを開き、以下のコマンドを一行ずつコピー＆ペーストして、毎回 **Enterキー** を押してください。
+### 2. ターミナルで設定をやり直す
+画面下部の「Terminal」タブを開き、以下のコマンドを一行ずつ実行してください。
 
 ```bash
-git init
-git add .
-git commit -m "initial version"
-git branch -M main
+# 一度設定をリセット
+git remote remove origin
+
+# 正しいURLを登録（[コピーしたURL] の部分を自分のURLに書き換えてください）
 git remote add origin [コピーしたURL]
+
+# 送信を実行
 git push -u origin main
 ```
 
 **【注意】Username/Passwordを求められたら**
-- `Username`: GitHubのユーザー名を入力してEnter。
-- `Password`: パスワードではなく、GitHubで発行した「アクセストークン」を入力する必要があります。
+- `Username`: GitHubのユーザー名。
+- `Password`: GitHubで発行した「パーソナルアクセストークン」。
 
 ---
 
-## 🛠 トラブルシューティング：エラーが出る場合
+## 🛠 トラブルシューティング
 
-1.  **ブラウザでGitHubを確認**: 自分のリポジトリページを開き、ファイルが表示されているか確認してください。
-2.  **ファイルがない場合**: ターミナルで止まっていませんか？エラーが出ていたら教えてください。
-3.  **再試行**: 以下の3行を順番に実行してください。
-    ```bash
-    git add .
-    git commit -m "retry"
-    git push -u origin main
-    ```
+1.  **URLの貼り付け**: `[コピーしたURL]` という文字ごと貼り付けないように注意してください。`https://` で始まる自分のURLだけを貼り付けます。
+2.  **ブラウザで確認**: 自分のリポジトリページを更新して、ファイルが表示されていれば成功です。
 
 ---
 
