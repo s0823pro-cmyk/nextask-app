@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/navigation"
+import Link from "next/link"
 import { ArrowRight, Clock, Search, X, AlertTriangle, Briefcase } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
