@@ -5,40 +5,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Task",
       "type": "object",
-      "description": "Represents a single task within the DailyFlow application, including its details, status, and associated client.",
+      "description": "Represents a single task within the NexTask application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Task entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "The concise title or name of the task."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the task."
-        },
-        "constructionType": {
-          "type": "string",
-          "description": "The type of construction work.",
-          "enum": ["原状回復工事", "入居中工事", "共用部工事", "保険案件"]
-        },
-        "receptionDate": {
-          "type": "string",
-          "description": "The date when the task was received.",
-          "format": "date"
-        },
-        "dueDate": {
-          "type": "string",
-          "description": "The date and time by which the task is expected to be completed.",
-          "format": "date"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current progress status of the task.",
-          "enum": ["todo", "in_progress", "pending", "awaiting_payment", "done"]
-        },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "constructionType": { "type": "string" },
+        "receptionDate": { "type": "string", "format": "date" },
+        "dueDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "pending", "awaiting_payment", "done"] },
         "pdfs": {
           "type": "array",
           "items": {
@@ -47,127 +22,43 @@
               "name": { "type": "string" },
               "data": { "type": "string" }
             }
-          },
-          "description": "List of attached PDF documents (up to 3)."
+          }
         },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the task was first created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the task was last updated.",
-          "format": "date-time"
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the Client entity."
-        }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "clientId": { "type": "string" }
       },
-      "required": [
-        "id",
-        "title",
-        "receptionDate",
-        "dueDate",
-        "status",
-        "createdAt",
-        "updatedAt",
-        "clientId"
-      ]
+      "required": ["id", "title", "receptionDate", "dueDate", "status", "createdAt", "updatedAt", "clientId"]
     },
     "Client": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Client",
       "type": "object",
-      "description": "Represents a client who will access specific tasks via a dedicated URL.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Client entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The official name of the client."
-        },
-        "dedicatedUrlIdentifier": {
-          "type": "string",
-          "description": "A unique identifier used to generate a dedicated URL for task viewing."
-        },
-        "contactEmail": {
-          "type": "string",
-          "description": "The primary contact email address for the client.",
-          "format": "email"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the client record was first created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the client record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "dedicatedUrlIdentifier": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "dedicatedUrlIdentifier",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["id", "name", "dedicatedUrlIdentifier", "createdAt", "updatedAt"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google"
-    ]
+    "providers": ["password", "anonymous", "google"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/admin_users/{userId}",
-        "definition": {
-          "entityName": "user",
-          "schema": {
-            "$ref": "#/backend/entities/user"
-          },
-          "description": "Identifies administrative users."
-        }
-      },
-      {
-        "path": "/clients/{clientId}",
-        "definition": {
-          "entityName": "Client",
-          "schema": {
-            "$ref": "#/backend/entities/Client"
-          },
-          "description": "Stores client records."
-        }
-      },
-      {
-        "path": "/tasks/{taskId}",
-        "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "Main storage for tasks."
-        }
-      },
-      {
-        "path": "/client_task_views/{dedicatedUrlIdentifier}/tasks/{taskId}",
-        "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "Denormalized read-only view of tasks for client access."
-        }
-      }
-    ]
+    "/clients/{clientId}": {
+      "schema": "#/entities/Client",
+      "description": "Stores client records."
+    },
+    "/tasks/{taskId}": {
+      "schema": "#/entities/Task",
+      "description": "Main storage for tasks."
+    },
+    "/client_task_views/{identifier}/tasks/{taskId}": {
+      "schema": "#/entities/Task",
+      "description": "Read-only view of tasks for public client portal."
+    }
   }
 }
