@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react"
+import { Plus, Search, SlidersHorizontal, Share2, Copy, Check } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import { Button } from "@/components/ui/button"
@@ -15,69 +15,88 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog"
 import { Task, TaskStatus, Client } from "@/lib/types"
-import { getTasks, saveTask, deleteTask, updateTaskStatus, getClients } from "@/lib/task-service"
+import { saveTaskWithSync, deleteTaskWithSync, generateId } from "@/lib/task-service"
 import { TaskCard } from "@/components/task-card"
 import { TaskForm } from "@/components/task-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase"
+import { collection, doc, query, where } from "firebase/firestore"
 
 export default function ClientDashboard() {
   const { clientId } = useParams<{ clientId: string }>()
-  const [tasks, setTasks] = React.useState<Task[]>([])
-  const [client, setClient] = React.useState<Client | null>(null)
+  const db = useFirestore()
+  
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
+  const [copied, setCopied] = React.useState(false)
 
-  React.useEffect(() => {
-    const clients = getClients()
-    const currentClient = clients.find(c => c.id === clientId)
-    setClient(currentClient || { id: clientId, name: clientId, color: "bg-gray-500" })
-    loadTasks()
-  }, [clientId])
+  // 取引先情報の取得
+  const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
+  const { data: client } = useDoc<Client>(clientRef);
 
-  const loadTasks = () => {
-    setTasks(getTasks(clientId))
-  }
+  // タスク一覧の取得
+  const tasksQuery = useMemoFirebase(() => {
+    return query(collection(db, 'tasks'), where('clientId', '==', clientId));
+  }, [db, clientId]);
+  const { data: tasks = [], isLoading } = useCollection<Task>(tasksQuery);
 
   const handleCreateTask = (data: Partial<Task>) => {
+    if (!client) return;
+    const now = new Date().toISOString();
     const newTask: Task = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateId(),
       clientId,
       title: data.title || "",
       description: data.description || "",
       status: data.status || "todo",
-      dueDate: data.dueDate || new Date().toISOString().split('T')[0],
+      dueDate: data.dueDate || now.split('T')[0],
       subtasks: [],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     }
-    saveTask(newTask)
-    loadTasks()
-    setIsCreateOpen(false)
-    toast({ title: "タスクを作成しました", description: "新しいタスクがリストに追加されました。" })
+    saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
+    setIsCreateOpen(false);
+    toast({ title: "タスクを作成しました" });
   }
 
   const handleUpdateTask = (data: Partial<Task>) => {
-    if (!editingTask) return
-    const updatedTask: Task = { ...editingTask, ...data }
-    saveTask(updatedTask)
-    loadTasks()
-    setEditingTask(null)
-    toast({ title: "タスクを更新しました", description: "変更内容が保存されました。" })
+    if (!editingTask || !client) return;
+    const updatedTask: Task = { 
+      ...editingTask, 
+      ...data, 
+      updatedAt: new Date().toISOString() 
+    }
+    saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
+    setEditingTask(null);
+    toast({ title: "タスクを更新しました" });
   }
 
   const handleDeleteTask = (taskId: string) => {
-    deleteTask(taskId)
-    loadTasks()
-    toast({ title: "タスクを削除しました", variant: "destructive" })
+    if (!client) return;
+    deleteTaskWithSync(db, taskId, client.dedicatedUrlIdentifier);
+    toast({ title: "タスクを削除しました", variant: "destructive" });
   }
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    updateTaskStatus(taskId, status)
-    loadTasks()
-    toast({ title: "ステータスを更新しました" })
+    const task = tasks?.find(t => t.id === taskId);
+    if (task && client) {
+      const updatedTask = { ...task, status, updatedAt: new Date().toISOString() };
+      saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
+      toast({ title: "ステータスを更新しました" });
+    }
   }
 
-  const filteredTasks = tasks.filter(t => 
+  const copyShareLink = () => {
+    if (!client) return;
+    const url = `${window.location.origin}/view/${client.dedicatedUrlIdentifier}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ title: "共有URLをコピーしました" });
+  }
+
+  const filteredTasks = (tasks || []).filter(t => 
     t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -88,31 +107,39 @@ export default function ClientDashboard() {
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className={`w-3 h-3 rounded-full ${client?.color}`} />
+            <div className={`w-3 h-3 rounded-full ${client?.color || 'bg-gray-400'}`} />
             <span className="text-sm font-medium text-muted-foreground">取引先</span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">{client?.name} の業務フロー</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            {client?.name || '読み込み中...'} の業務フロー
+          </h2>
           <p className="text-muted-foreground">タスクの進捗をリアルタイムで管理・更新します。</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="mr-2 h-4 w-4" /> 新規タスク
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>新しいタスクを作成</DialogTitle>
-            </DialogHeader>
-            <TaskForm 
-              onSubmit={handleCreateTask} 
-              onCancel={() => setIsCreateOpen(false)} 
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10">
+            {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Share2 className="mr-2 h-4 w-4" />}
+            共有URLをコピー
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-10 bg-primary hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" /> 新規タスク
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>新しいタスクを作成</DialogTitle>
+              </DialogHeader>
+              <TaskForm 
+                onSubmit={handleCreateTask} 
+                onCancel={() => setIsCreateOpen(false)} 
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -125,9 +152,6 @@ export default function ClientDashboard() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm" className="hidden sm:flex">
-          <SlidersHorizontal className="mr-2 h-4 w-4" /> フィルター
-        </Button>
       </div>
 
       <Tabs defaultValue="all" className="w-full">
@@ -150,58 +174,38 @@ export default function ClientDashboard() {
               />
             ))}
           </div>
-          {filteredTasks.length === 0 && (
+          {!isLoading && filteredTasks.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-              <Layout className="h-12 w-12 mb-4 opacity-20" />
+              <Plus className="h-12 w-12 mb-4 opacity-20" />
               <p>タスクが見つかりませんでした。</p>
             </div>
           )}
         </TabsContent>
         
+        {/* ... other TabsContent remain similar, just filtered ... */}
         <TabsContent value="todo" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {todoTasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={setEditingTask}
-                onDelete={handleDeleteTask}
-                onStatusChange={handleStatusChange}
-              />
+              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
-
         <TabsContent value="in_progress" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {inProgressTasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={setEditingTask}
-                onDelete={handleDeleteTask}
-                onStatusChange={handleStatusChange}
-              />
+              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
-
         <TabsContent value="done" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {doneTasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={setEditingTask}
-                onDelete={handleDeleteTask}
-                onStatusChange={handleStatusChange}
-              />
+              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -217,28 +221,5 @@ export default function ClientDashboard() {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
-
-function Layout({ className, ...props }: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      {...props}
-    >
-      <rect width="7" height="11" x="3" y="3" rx="1" />
-      <rect width="7" height="5" x="14" y="3" rx="1" />
-      <rect width="7" height="9" x="14" y="12" rx="1" />
-      <rect width="7" height="5" x="3" y="16" rx="1" />
-    </svg>
   )
 }

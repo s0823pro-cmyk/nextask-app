@@ -1,80 +1,58 @@
+'use client';
 
-import { Task, TaskStatus, Client } from './types';
+import { 
+  collection, 
+  doc, 
+  query, 
+  where, 
+  getDocs,
+  setDoc,
+  deleteDoc,
+  Firestore,
+  writeBatch
+} from 'firebase/firestore';
+import { Task, Client } from './types';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const STORAGE_KEY = 'dailyflow_tasks';
-const CLIENTS_STORAGE_KEY = 'dailyflow_clients';
+/**
+ * 取引先のタスクを保存する際、管理者用マスターとクライアント用ビューの両方を更新します。
+ */
+export function saveTaskWithSync(db: Firestore, task: Task, clientIdentifier: string) {
+  const taskRef = doc(db, 'tasks', task.id);
+  const viewRef = doc(db, 'client_task_views', clientIdentifier, 'tasks', task.id);
 
-// Default clients if none exist
-const DEFAULT_CLIENTS: Client[] = [
-  { id: "acme-inc", name: "株式会社アクメ", color: "bg-blue-500" },
-  { id: "global-corp", name: "グローバル合同会社", color: "bg-green-500" },
-  { id: "future-tech", name: "フューチャー・テック", color: "bg-purple-500" },
-];
+  // 非同期（ノンブロッキング）で両方に書き込み
+  setDocumentNonBlocking(taskRef, task, { merge: true });
+  setDocumentNonBlocking(viewRef, task, { merge: true });
+}
 
-export const getTasks = (clientId: string): Task[] => {
-  if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return [];
-  const allTasks: Task[] = JSON.parse(stored);
-  return allTasks.filter(t => t.clientId === clientId);
-};
+/**
+ * 取引先のタスクを削除する際、両方のコレクションから削除します。
+ */
+export function deleteTaskWithSync(db: Firestore, taskId: string, clientIdentifier: string) {
+  const taskRef = doc(db, 'tasks', taskId);
+  const viewRef = doc(db, 'client_task_views', clientIdentifier, 'tasks', taskId);
 
-export const saveTask = (task: Task) => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  let allTasks: Task[] = stored ? JSON.parse(stored) : [];
-  
-  const index = allTasks.findIndex(t => t.id === task.id);
-  if (index >= 0) {
-    allTasks[index] = task;
-  } else {
-    allTasks.push(task);
-  }
-  
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(allTasks));
-};
+  deleteDocumentNonBlocking(taskRef);
+  deleteDocumentNonBlocking(viewRef);
+}
 
-export const deleteTask = (taskId: string) => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return;
-  let allTasks: Task[] = JSON.parse(stored);
-  allTasks = allTasks.filter(t => t.id !== taskId);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(allTasks));
-};
+/**
+ * 取引先を保存します。
+ */
+export function saveClientFirestore(db: Firestore, client: Client) {
+  const clientRef = doc(db, 'clients', client.id);
+  setDocumentNonBlocking(clientRef, client, { merge: true });
+}
 
-export const updateTaskStatus = (taskId: string, status: TaskStatus) => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return;
-  let allTasks: Task[] = JSON.parse(stored);
-  const index = allTasks.findIndex(t => t.id === taskId);
-  if (index >= 0) {
-    allTasks[index].status = status;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allTasks));
-  }
-};
+/**
+ * 取引先を削除します（関連タスクのクリーンアップは本来サーバーサイドやバッチで行うべきですが、ここでは簡易的にクライアントのみ）。
+ */
+export function deleteClientFirestore(db: Firestore, clientId: string) {
+  const clientRef = doc(db, 'clients', clientId);
+  deleteDocumentNonBlocking(clientRef);
+}
 
-// Client Management
-export const getClients = (): Client[] => {
-  if (typeof window === 'undefined') return DEFAULT_CLIENTS;
-  const stored = localStorage.getItem(CLIENTS_STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(DEFAULT_CLIENTS));
-    return DEFAULT_CLIENTS;
-  }
-  return JSON.parse(stored);
-};
-
-export const saveClient = (client: Client) => {
-  const clients = getClients();
-  const index = clients.findIndex(c => c.id === client.id);
-  if (index >= 0) {
-    clients[index] = client;
-  } else {
-    clients.push(client);
-  }
-  localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
-};
-
-export const deleteClient = (clientId: string) => {
-  const clients = getClients().filter(c => c.id !== clientId);
-  localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
-};
+export function generateId() {
+  return Math.random().toString(36).substring(2, 11);
+}

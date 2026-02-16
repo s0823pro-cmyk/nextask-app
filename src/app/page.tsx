@@ -7,41 +7,35 @@ import { ArrowRight, CheckCircle, Clock, Layout, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getClients, getTasks } from "@/lib/task-service"
 import { Client, Task } from "@/lib/types"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection } from "firebase/firestore"
 
 export default function Home() {
-  const [clients, setClients] = React.useState<Client[]>([])
-  const [stats, setStats] = React.useState({
-    todayTasks: 0,
-    completedTotal: 0,
-    clientCount: 0,
-    completionRate: 0
-  })
+  const db = useFirestore()
 
-  React.useEffect(() => {
-    const allClients = getClients()
-    const aggregatedTasks: (Task & { clientName: string })[] = []
-    
-    allClients.forEach(client => {
-      const clientTasks = getTasks(client.id)
-      clientTasks.forEach(t => aggregatedTasks.push({ ...t, clientName: client.name }))
-    })
+  // 取引先一覧の取得
+  const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
+  const { data: clients = [] } = useCollection<Client>(clientsRef);
 
+  // 全タスクの取得（統計用）
+  const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
+  const { data: allTasks = [] } = useCollection<Task>(tasksRef);
+
+  const stats = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    const todayTasksCount = aggregatedTasks.filter(t => t.dueDate === today && t.status !== 'done').length
-    const completedTotalCount = aggregatedTasks.filter(t => t.status === 'done').length
-    const totalTasksCount = aggregatedTasks.length
+    const todayTasksCount = (allTasks || []).filter(t => t.dueDate === today && t.status !== 'done').length
+    const completedTotalCount = (allTasks || []).filter(t => t.status === 'done').length
+    const totalTasksCount = (allTasks || []).length
     const rate = totalTasksCount > 0 ? Math.round((completedTotalCount / totalTasksCount) * 100) : 0
 
-    setClients(allClients)
-    setStats({
+    return {
       todayTasks: todayTasksCount,
       completedTotal: completedTotalCount,
-      clientCount: allClients.length,
+      clientCount: (clients || []).length,
       completionRate: rate
-    })
-  }, [])
+    }
+  }, [allTasks, clients])
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
@@ -102,8 +96,8 @@ export default function Home() {
             <CardDescription>各取引先の専用ページでタスクを管理できます。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {clients.map((client) => {
-              const taskCount = getTasks(client.id).length
+            {(clients || []).map((client) => {
+              const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
               return (
                 <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-4">
@@ -121,7 +115,7 @@ export default function Home() {
                 </div>
               )
             })}
-            {clients.length === 0 && (
+            {(!clients || clients.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 <p>取引先が登録されていません。</p>
                 <p className="text-xs mt-1">サイドバーの「設定」から追加してください。</p>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -28,20 +27,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Client } from "@/lib/types"
-import { getClients, saveClient, deleteClient } from "@/lib/task-service"
+import { saveClientFirestore, deleteClientFirestore, generateId } from "@/lib/task-service"
 import { ClientForm } from "@/components/client-form"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection } from "firebase/firestore"
 
 export function SidebarNav() {
   const pathname = usePathname()
-  const [clients, setClients] = React.useState<Client[]>([])
+  const db = useFirestore()
+  
+  // 取引先一覧の参照をメモ化
+  const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
+  const { data: clients = [] } = useCollection<Client>(clientsRef);
+  
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
-
-  React.useEffect(() => {
-    setClients(getClients())
-  }, [])
 
   const handleAddOrUpdateClient = (data: { name: string; color: string }) => {
     if (editingClient) {
@@ -50,25 +52,24 @@ export function SidebarNav() {
         name: data.name,
         color: data.color,
       }
-      saveClient(updatedClient)
+      saveClientFirestore(db, updatedClient)
       toast({ title: "取引先を更新しました" })
       setEditingClient(null)
     } else {
       const newClient: Client = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: generateId(),
         name: data.name,
         color: data.color,
+        dedicatedUrlIdentifier: Math.random().toString(36).substr(2, 12), // Unguessable link identifier
       }
-      saveClient(newClient)
+      saveClientFirestore(db, newClient)
       toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
     }
-    setClients(getClients())
   }
 
   const handleDeleteClient = (clientId: string, clientName: string) => {
-    if (confirm(`${clientName} を削除してもよろしいですか？関連するタスクも表示されなくなります。`)) {
-      deleteClient(clientId)
-      setClients(getClients())
+    if (confirm(`${clientName} を削除してもよろしいですか？`)) {
+      deleteClientFirestore(db, clientId)
       toast({ title: "取引先を削除しました", variant: "destructive" })
     }
   }
@@ -105,7 +106,7 @@ export function SidebarNav() {
             <SidebarGroupLabel>取引先別タスク</SidebarGroupLabel>
           </div>
           <SidebarMenu>
-            {clients.map((client) => (
+            {(clients || []).map((client) => (
               <SidebarMenuItem key={client.id}>
                 <SidebarMenuButton 
                   asChild 
@@ -144,7 +145,7 @@ export function SidebarNav() {
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium">取引先一覧</h4>
                     <div className="space-y-2">
-                      {clients.map((client) => (
+                      {(clients || []).map((client) => (
                         <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${client.color}`} />
@@ -170,7 +171,7 @@ export function SidebarNav() {
                           </div>
                         </div>
                       ))}
-                      {clients.length === 0 && (
+                      {clients?.length === 0 && (
                         <p className="text-sm text-muted-foreground">登録されている取引先はありません。</p>
                       )}
                     </div>
