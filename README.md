@@ -16,6 +16,9 @@ git push -u origin main
 
 ※ これを実行すると、パスワードを聞かれることなく直接送信が完了します。
 
+### 2. 成功の確認
+ブラウザで自分の GitHub リポジトリを開き、ファイルが並んでいることを確認してください。
+
 ---
 
 ## 🚀 デプロイ手順（Firebase App Hosting）
@@ -25,7 +28,7 @@ GitHubへの送信が成功したら、以下の設定でFirebaseを動かしま
 1. [Firebase Console](https://console.firebase.google.com/) > **「App Hosting」** を選択。
 2. GitHub リポジトリ（`nextask-app`）を選択。
 3. **設定**:
-   - **ライブブランチ**: `main`
+   - **ライブブランチ**: `main` （※送信が成功していれば選択肢に出ます）
    - **アプリのルートディレクトリ**: 空欄（デフォルト）
    - **リージョン**: `asia-east1` (台湾) を推奨
 4. 「デプロイ」を実行。
