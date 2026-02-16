@@ -22,15 +22,15 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
 
-  // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
+    setMounted(true)
     if (!isEditOpen) {
       if (typeof document !== 'undefined') {
         document.body.style.pointerEvents = 'auto'
         document.body.style.overflow = 'auto'
       }
-      
       const timer = setTimeout(() => {
         setEditingTask(null)
       }, 300)
@@ -38,22 +38,27 @@ export default function Home() {
     }
   }, [isEditOpen])
 
-  // 取引先一覧の取得
   const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
   const { data: clients = [] } = useCollection<Client>(clientsRef);
 
-  // 全タスクの取得（統計および検索用）
   const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
-  const { data: allTasks = [], isLoading: isTasksLoading } = useCollection<Task>(tasksRef);
+  const { data: allTasks = [] } = useCollection<Task>(tasksRef);
 
   const stats = React.useMemo(() => {
-    const today = new Date().toISOString().split('T')[0]
+    if (!mounted) return { todayTasks: 0, overdueTasks: 0, totalClients: 0 }
+    
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
     const tasks = allTasks || []
     
-    const todayTasksCount = tasks.filter(t => t.dueDate === today && t.status !== 'done').length
+    const todayTasksCount = tasks.filter(t => t.dueDate === todayStr && t.status !== 'done').length
     const overdueTasksCount = tasks.filter(t => {
-      if (t.status === 'done') return false
-      return t.dueDate < today
+      if (t.status === 'done' || !t.dueDate) return false
+      try {
+        return new Date(t.dueDate) < now
+      } catch (e) {
+        return false
+      }
     }).length
 
     return {
@@ -61,16 +66,15 @@ export default function Home() {
       overdueTasks: overdueTasksCount,
       totalClients: clients?.length || 0
     }
-  }, [allTasks, clients])
+  }, [allTasks, clients, mounted])
 
-  // 検索フィルタリングロジック
   const filteredTasks = React.useMemo(() => {
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return [];
 
     return (allTasks || []).filter(t => {
-      const matchText = t.title.toLowerCase().includes(searchLower) || 
-                       t.description.toLowerCase().includes(searchLower);
+      const matchText = (t.title?.toLowerCase() || "").includes(searchLower) || 
+                       (t.description?.toLowerCase() || "").includes(searchLower);
       
       if (matchText) return true;
 
@@ -131,11 +135,13 @@ export default function Home() {
     toast({ title: "タスクを更新しました" });
   }
 
+  if (!mounted) return null;
+
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1 md:gap-2">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">DailyFlowへようこそ</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">DailyFlow</h1>
           <p className="text-xs md:text-sm text-muted-foreground">
             業務効率を最大化するタスク管理プラットフォーム。
           </p>
@@ -143,7 +149,7 @@ export default function Home() {
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="案件横断でタスクを検索 (2/17等)..." 
+            placeholder="全件からタスクを検索..." 
             className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -222,12 +228,6 @@ export default function Home() {
                   />
                 ))}
               </div>
-              {filteredTasks.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/20">
-                  <Search className="h-12 w-12 mb-4 opacity-20" />
-                  <p>一致するタスクが見つかりませんでした。</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         ) : (
@@ -258,12 +258,6 @@ export default function Home() {
                   )
                 })}
               </div>
-              {(!clients || clients.length === 0) && (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
-                  <p className="text-sm">取引先が登録されていません。</p>
-                  <p className="text-[10px] mt-2">サイドバーの「設定」から追加してください。</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
