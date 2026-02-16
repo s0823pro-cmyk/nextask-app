@@ -2,17 +2,21 @@
 
 NexTaskを世界中に公開し、友人が401エラーなしで閲覧できるようにするための手順書です。
 
+## 💰 料金についての注意点
+Firebase App Hosting を利用するには、Firebase プロジェクトを **「Blaze プラン（従量制）」** にアップグレードする必要があります。
+- **無料枠があります**: 小規模な利用であれば、Google Cloud の無料枠内に収まるため、多くの場合 **実質 0 円** で運用可能です。
+- クレジットカードの登録が必要ですが、無料枠を超えない限り請求は発生しません。
+
 ## 🚀 GitHub へのコード送信手順
 
 Firebase App Hosting を利用するには、まずコードを GitHub に保存する必要があります。
 
-### 1. GitHub リポジトリの準備（完了済み）
-- リポジトリ名：`nextask-app`
-- URL：`https://github.com/s8823pro-cmyk/nextask-app.git`
+### 1. GitHub リポジトリの準備
+- GitHub で「空のリポジトリ」を作成します（READMEなどは作成しないでください）。
+- リポジトリの URL（`https://github.com/.../nextask-app.git`）をコピーします。
 
 ### 2. 開発環境のターミナルで実行
-このチャット画面の**一番下にある「Terminal」タブ**をクリックして開き、以下のコマンドを一行ずつコピーして貼り付け、Enterキーを押してください。
-※ターミナルにもともとある文字は消さずに、一番下の入力欄に貼り付けていけば大丈夫です。
+この画面の**一番下にある「Terminal」タブ**をクリックして開き、以下のコマンドを一行ずつコピーして貼り付け、Enterキーを押してください。
 
 ```bash
 # Gitの初期化
@@ -27,13 +31,12 @@ git commit -m "initial version of nextask"
 # メインブランチの指定
 git branch -M main
 
-# リモートリポジトリの紐付け
-git remote add origin https://github.com/s8823pro-cmyk/nextask-app.git
+# リモートリポジトリの紐付け（URLは自分のものに書き換えてください）
+git remote add origin https://github.com/あなたの名前/nextask-app.git
 
 # GitHubへ送信
 git push -u origin main
 ```
-※ `git push` 時にユーザー名とパスワード（またはトークン）を求められたら、GitHubの情報を入力してください。
 
 ---
 
@@ -43,7 +46,7 @@ git push -u origin main
 
 1. [Firebase Console](https://console.firebase.google.com/) にアクセス。
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
-3. 作成した GitHub リポジトリ（`nextask-app`）を選択。
+3. 作成した GitHub リポジトリを選択。
 4. 設定はデフォルトのままで「デプロイ」を実行。
 5. 完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
 
