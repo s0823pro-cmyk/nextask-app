@@ -8,6 +8,16 @@ import { ArrowRight, Clock, Search, X, AlertTriangle, Briefcase } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Client, Task, TaskStatus } from "@/lib/types"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
@@ -33,6 +43,7 @@ export default function Home() {
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     setMounted(true)
@@ -132,11 +143,18 @@ export default function Home() {
   }
 
   const handleDeleteTask = (taskId: string) => {
-    const task = allTasks?.find(t => t.id === taskId);
-    const client = clients?.find(c => c.id === task?.clientId);
-    if (task && client) {
-      deleteTaskWithSync(db, taskId, client.dedicatedUrlIdentifier);
-      toast({ title: "タスクを削除しました", variant: "destructive" });
+    setTaskToDelete(taskId);
+  }
+
+  const confirmDeleteTask = () => {
+    if (taskToDelete) {
+      const task = allTasks?.find(t => t.id === taskToDelete);
+      const client = clients?.find(c => c.id === task?.clientId);
+      if (task && client) {
+        deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
+        toast({ title: "タスクを削除しました", variant: "destructive" });
+      }
+      setTaskToDelete(null);
     }
   }
 
@@ -304,6 +322,26 @@ export default function Home() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>タスクを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              このタスクを削除してもよろしいですか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteTask} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

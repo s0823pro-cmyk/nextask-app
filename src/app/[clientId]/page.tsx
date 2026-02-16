@@ -15,6 +15,16 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Task, TaskStatus, Client } from "@/lib/types"
 import { saveTaskWithSync, deleteTaskWithSync, generateId } from "@/lib/task-service"
 import { TaskCard } from "@/components/task-card"
@@ -32,6 +42,7 @@ export default function ClientDashboard() {
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
+  const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
   // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
@@ -97,9 +108,15 @@ export default function ClientDashboard() {
   }
 
   const handleDeleteTask = (taskId: string) => {
-    if (!client) return;
-    deleteTaskWithSync(db, taskId, client.dedicatedUrlIdentifier);
-    toast({ title: "タスクを削除しました", variant: "destructive" });
+    setTaskToDelete(taskId);
+  }
+
+  const confirmDeleteTask = () => {
+    if (taskToDelete && client) {
+      deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
+      toast({ title: "タスクを削除しました", variant: "destructive" });
+      setTaskToDelete(null);
+    }
   }
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
@@ -300,6 +317,26 @@ export default function ClientDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>タスクを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              このタスクを削除してもよろしいですか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteTask} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
