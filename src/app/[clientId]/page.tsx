@@ -253,7 +253,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="in_progress" className="w-full">
         <div className="overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           <TabsList className="bg-muted/50 p-1 w-full justify-start md:justify-center">
             <TabsTrigger value="in_progress" className="flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>

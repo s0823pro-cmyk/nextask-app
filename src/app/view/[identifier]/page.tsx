@@ -116,7 +116,7 @@ export default function PublicClientView() {
           </div>
         </div>
 
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="in_progress" className="w-full">
           <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
             <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
