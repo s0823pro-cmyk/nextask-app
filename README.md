@@ -8,9 +8,9 @@ Firebase App Hosting を利用するには、Firebase プロジェクトを **�
 - **無料枠があります**: 小規模な利用であれば、多くの場合 **実質 0 円** で運用可能です。
 - **予算額（予算アラート）**: 支払う金額ではなく「この金額に近づいたら通知する」しきい値です。まずは **1,000円** 程度に設定するのが安心です。
 
-## 🚀 GitHub へのコード送信手順（修正版）
+## 🚀 GitHub へのコード送信手順（決定版）
 
-ターミナルで以下のコマンドを一行ずつ実行してください。
+ターミナルで以下のコマンドを一行ずつ、順番に実行してください。
 
 ### 1. 以前の設定を削除
 ```bash
@@ -27,9 +27,9 @@ git remote add origin https://github.com/s0823pro-cmyk/nextask-app.git
 git push -u origin main
 ```
 
-**【注意】Username/Passwordを求められたら**
-- `Username`: GitHubのユーザー名（s0823pro-cmyk）。
-- `Password`: GitHubで発行した「パーソナルアクセストークン」。
+**【注意】ユーザー名やパスワードを求められたら**
+- `Username`: `s0823pro-cmyk` を入力。
+- `Password`: GitHubで発行した「パーソナルアクセストークン」を入力（※本物のパスワードではエラーになります）。
 
 ---
 
