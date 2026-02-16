@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, X, AlertTriangle, Briefcase } from "lucide-react"
+import { ArrowRight, Clock, Search, X, Activity, Coins } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,28 +83,33 @@ export default function Home() {
   }, [clients])
 
   const stats = React.useMemo(() => {
-    if (!mounted) return { todayTasks: 0, overdueTasks: 0, totalClients: 0 }
+    if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0 }
     
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0]
     const tasks = allTasks || []
     
-    const todayTasksCount = tasks.filter(t => t.dueDate === todayStr && t.status !== 'done' && t.status !== 'awaiting_payment').length
-    const overdueTasksCount = tasks.filter(t => {
-      if (t.status === 'done' || t.status === 'awaiting_payment' || !t.dueDate) return false
-      try {
-        return new Date(t.dueDate) < now
-      } catch (e) {
-        return false
-      }
-    }).length
+    // 今日のタスク（未完了）
+    const todayTasksCount = tasks.filter(t => 
+      t.dueDate === todayStr && (t.status === 'todo' || t.status === 'in_progress')
+    ).length
+
+    // 進行中のタスク（全体）
+    const inProgressTasksCount = tasks.filter(t => 
+      t.status === 'todo' || t.status === 'in_progress'
+    ).length
+
+    // 入金待ち
+    const awaitingPaymentTasksCount = tasks.filter(t => 
+      t.status === 'awaiting_payment'
+    ).length
 
     return {
       todayTasks: todayTasksCount,
-      overdueTasks: overdueTasksCount,
-      totalClients: clients?.length || 0
+      inProgressTasks: inProgressTasksCount,
+      awaitingPaymentTasks: awaitingPaymentTasksCount
     }
-  }, [allTasks, clients, mounted])
+  }, [allTasks, mounted])
 
   const filteredTasks = React.useMemo(() => {
     const searchLower = searchQuery.toLowerCase().trim();
@@ -233,23 +238,23 @@ export default function Home() {
           
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">期限切れ</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <CardTitle className="text-xs md:text-sm font-medium">進行中のタスク</CardTitle>
+              <Activity className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
-              <p className="text-[10px] md:text-xs text-muted-foreground">期日超過の未完了</p>
+              <div className="text-xl md:text-2xl font-bold">{stats.inProgressTasks}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">全体の進行中タスク数</p>
             </CardContent>
           </Card>
 
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">登録取引先</CardTitle>
-              <Briefcase className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-xs md:text-sm font-medium">入金待ち</CardTitle>
+              <Coins className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">{stats.totalClients}</div>
-              <p className="text-[10px] md:text-xs text-muted-foreground">管理中の取引先総数</p>
+              <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">入金確認待ちタスク数</p>
             </CardContent>
           </Card>
         </div>
