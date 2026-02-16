@@ -3,18 +3,26 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye } from "lucide-react"
 import { format } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Task } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
@@ -48,13 +56,11 @@ export default function PublicClientView() {
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return true;
 
-    // タイトルと説明の検索
     const matchText = t.title.toLowerCase().includes(searchLower) || 
                      t.description.toLowerCase().includes(searchLower);
     
     if (matchText) return true;
 
-    // 日付の検索 (2/17 や 2025.2.17 などの入力を 2-17, 2025-2-17 に正規化)
     const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
     const dateParts = normalizedSearch.split('-');
     const paddedSearch = dateParts.map(part => {
@@ -190,9 +196,38 @@ function PublicTaskCard({ task }: { task: Task }) {
       </CardHeader>
       
       <CardContent className="p-5 pt-0 pl-7 flex-1 flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-6 min-h-[3rem] leading-relaxed">
-          {task.description || "詳細説明はありません。"}
-        </p>
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-2">
+            {task.description || "詳細説明はありません。"}
+          </p>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="text-primary text-xs font-bold flex items-center gap-1 hover:underline">
+                <Eye className="w-3 h-3" /> 全文を確認する
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>{task.title}</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="flex-1 mt-4 p-4 border rounded-md">
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {task.description || "詳細説明はありません。"}
+                </div>
+              </ScrollArea>
+              <div className="mt-4 flex flex-col gap-2 border-t pt-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileText className="w-3 h-3" />
+                  <span>受付日: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy年MM月dd日") : "-"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="w-3 h-3" />
+                  <span>完了予定: {format(new Date(task.dueDate), "yyyy年MM月dd日")}</span>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         
         <div className="space-y-3 mt-auto">
           <div className="flex flex-col gap-2">
