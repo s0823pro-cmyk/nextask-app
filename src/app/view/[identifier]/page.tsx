@@ -60,9 +60,13 @@ export default function PublicClientView() {
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return true;
 
-    const matchText = (t.title?.toLowerCase() || "").includes(searchLower) || 
-                     (t.description?.toLowerCase() || "").includes(searchLower) ||
-                     (t.constructionType?.toLowerCase() || "").includes(searchLower);
+    const title = (t.title || "").toLowerCase();
+    const description = (t.description || "").toLowerCase();
+    const constructionType = (t.constructionType || "").toLowerCase();
+    
+    const matchText = title.includes(searchLower) || 
+                     description.includes(searchLower) ||
+                     constructionType.includes(searchLower);
     
     if (matchText) return true;
 
@@ -75,10 +79,10 @@ export default function PublicClientView() {
       return part;
     }).join('-');
 
-    return t.receptionDate?.includes(paddedSearch) || 
-           t.dueDate?.includes(paddedSearch) ||
-           t.receptionDate?.includes(normalizedSearch) ||
-           t.dueDate?.includes(normalizedSearch);
+    return (t.receptionDate || "").includes(paddedSearch) || 
+           (t.dueDate || "").includes(paddedSearch) ||
+           (t.receptionDate || "").includes(normalizedSearch) ||
+           (t.dueDate || "").includes(normalizedSearch);
   });
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')

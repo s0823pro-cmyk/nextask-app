@@ -93,9 +93,13 @@ export default function Home() {
     if (!searchLower) return [];
 
     return (allTasks || []).filter(t => {
-      const matchText = (t.title?.toLowerCase() || "").includes(searchLower) || 
-                       (t.description?.toLowerCase() || "").includes(searchLower) ||
-                       (t.constructionType?.toLowerCase() || "").includes(searchLower);
+      const title = (t.title || "").toLowerCase();
+      const description = (t.description || "").toLowerCase();
+      const constructionType = (t.constructionType || "").toLowerCase();
+      
+      const matchText = title.includes(searchLower) || 
+                       description.includes(searchLower) ||
+                       constructionType.includes(searchLower);
       
       if (matchText) return true;
 
@@ -108,10 +112,10 @@ export default function Home() {
         return part;
       }).join('-');
 
-      const matchDate = t.receptionDate?.includes(paddedSearch) || 
-                       t.dueDate?.includes(paddedSearch) ||
-                       t.receptionDate?.includes(normalizedSearch) ||
-                       t.dueDate?.includes(normalizedSearch);
+      const matchDate = (t.receptionDate || "").includes(paddedSearch) || 
+                       (t.dueDate || "").includes(paddedSearch) ||
+                       (t.receptionDate || "").includes(normalizedSearch) ||
+                       (t.dueDate || "").includes(normalizedSearch);
 
       return matchDate;
     });

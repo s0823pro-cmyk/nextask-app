@@ -144,32 +144,38 @@ export default function ClientDashboard() {
     }
   }
 
-  const filteredTasks = (tasks || []).filter(t => {
+  const filteredTasks = React.useMemo(() => {
     const searchLower = searchQuery.toLowerCase().trim();
-    if (!searchLower) return true;
+    if (!searchLower) return (tasks || []);
 
-    const matchText = t.title.toLowerCase().includes(searchLower) || 
-                     t.description.toLowerCase().includes(searchLower) ||
-                     (t.constructionType?.toLowerCase() || "").includes(searchLower);
-    
-    if (matchText) return true;
+    return (tasks || []).filter(t => {
+      const title = (t.title || "").toLowerCase();
+      const description = (t.description || "").toLowerCase();
+      const constructionType = (t.constructionType || "").toLowerCase();
+      
+      const matchText = title.includes(searchLower) || 
+                       description.includes(searchLower) ||
+                       constructionType.includes(searchLower);
+      
+      if (matchText) return true;
 
-    const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
-    const dateParts = normalizedSearch.split('-');
-    const paddedSearch = dateParts.map(part => {
-      if (/^\d{1,2}$/.test(part)) {
-        return part.padStart(2, '0');
-      }
-      return part;
-    }).join('-');
+      const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
+      const dateParts = normalizedSearch.split('-');
+      const paddedSearch = dateParts.map(part => {
+        if (/^\d{1,2}$/.test(part)) {
+          return part.padStart(2, '0');
+        }
+        return part;
+      }).join('-');
 
-    const matchDate = t.receptionDate?.includes(paddedSearch) || 
-                     t.dueDate?.includes(paddedSearch) ||
-                     t.receptionDate?.includes(normalizedSearch) ||
-                     t.dueDate?.includes(normalizedSearch);
+      const matchDate = (t.receptionDate || "").includes(paddedSearch) || 
+                       (t.dueDate || "").includes(paddedSearch) ||
+                       (t.receptionDate || "").includes(normalizedSearch) ||
+                       (t.dueDate || "").includes(normalizedSearch);
 
-    return matchDate;
-  })
+      return matchDate;
+    })
+  }, [tasks, searchQuery]);
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
