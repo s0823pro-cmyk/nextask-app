@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Settings, Plus, Home } from "lucide-react"
+import { LayoutDashboard, Settings, Home, Trash2 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import {
@@ -27,13 +27,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Client } from "@/lib/types"
-import { getClients, saveClient } from "@/lib/task-service"
+import { getClients, saveClient, deleteClient } from "@/lib/task-service"
 import { ClientForm } from "@/components/client-form"
+import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
 
 export function SidebarNav() {
   const pathname = usePathname()
   const [clients, setClients] = React.useState<Client[]>([])
-  const [isClientDialogOpen, setIsClientDialogOpen] = React.useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
 
   React.useEffect(() => {
     setClients(getClients())
@@ -47,8 +49,15 @@ export function SidebarNav() {
     }
     saveClient(newClient)
     setClients(getClients())
-    setIsClientDialogOpen(false)
     toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
+  }
+
+  const handleDeleteClient = (clientId: string, clientName: string) => {
+    if (confirm(`${clientName} を削除してもよろしいですか？関連するタスクも表示されなくなります。`)) {
+      deleteClient(clientId)
+      setClients(getClients())
+      toast({ title: "取引先を削除しました", variant: "destructive" })
+    }
   }
 
   return (
@@ -103,21 +112,54 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <DialogTrigger asChild>
-                <SidebarMenuButton tooltip="取引先の追加・管理">
+                <SidebarMenuButton tooltip="設定">
                   <Settings className="h-4 w-4" />
-                  <span>取引先の追加</span>
+                  <span>設定</span>
                 </SidebarMenuButton>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>新規取引先の追加</DialogTitle>
+                  <DialogTitle>設定・取引先管理</DialogTitle>
                 </DialogHeader>
-                <ClientForm 
-                  onSubmit={handleAddClient}
-                  onCancel={() => setIsClientDialogOpen(false)}
-                />
+                
+                <div className="space-y-6 py-4">
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">取引先一覧</h4>
+                    <div className="space-y-2">
+                      {clients.map((client) => (
+                        <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${client.color}`} />
+                            <span className="text-sm">{client.name}</span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteClient(client.id, client.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      {clients.length === 0 && (
+                        <p className="text-sm text-muted-foreground">登録されている取引先はありません。</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">新規取引先の追加</h4>
+                    <ClientForm 
+                      onSubmit={handleAddClient}
+                      onCancel={() => setIsSettingsOpen(false)}
+                    />
+                  </div>
+                </div>
               </DialogContent>
             </Dialog>
           </SidebarMenuItem>
