@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -39,18 +40,34 @@ const formSchema = z.object({
 })
 
 interface ClientFormProps {
+  initialClient?: Client
   onSubmit: (data: { name: string; color: string }) => void
   onCancel: () => void
 }
 
-export function ClientForm({ onSubmit, onCancel }: ClientFormProps) {
+export function ClientForm({ initialClient, onSubmit, onCancel }: ClientFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      color: "bg-blue-500",
+      name: initialClient?.name || "",
+      color: initialClient?.color || "bg-blue-500",
     },
   })
+
+  // Reset form when initialClient changes (e.g. when switching from add to edit or between different clients)
+  React.useEffect(() => {
+    if (initialClient) {
+      form.reset({
+        name: initialClient.name,
+        color: initialClient.color,
+      })
+    } else {
+      form.reset({
+        name: "",
+        color: "bg-blue-500",
+      })
+    }
+  }, [initialClient, form])
 
   return (
     <Form {...form}>
@@ -75,7 +92,7 @@ export function ClientForm({ onSubmit, onCancel }: ClientFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>テーマカラー</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="色を選択" />
@@ -97,11 +114,11 @@ export function ClientForm({ onSubmit, onCancel }: ClientFormProps) {
           )}
         />
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            キャンセル
+        <div className="flex justify-end gap-3 pt-2">
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            {initialClient ? "閉じる" : "キャンセル"}
           </Button>
-          <Button type="submit">保存</Button>
+          <Button type="submit">{initialClient ? "更新" : "保存"}</Button>
         </div>
       </form>
     </Form>

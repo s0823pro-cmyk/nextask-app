@@ -1,9 +1,10 @@
+
 "use client"
 
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Settings, Home, Trash2 } from "lucide-react"
+import { LayoutDashboard, Settings, Home, Trash2, Pencil } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import {
@@ -36,20 +37,32 @@ export function SidebarNav() {
   const pathname = usePathname()
   const [clients, setClients] = React.useState<Client[]>([])
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
+  const [editingClient, setEditingClient] = React.useState<Client | null>(null)
 
   React.useEffect(() => {
     setClients(getClients())
   }, [])
 
-  const handleAddClient = (data: { name: string; color: string }) => {
-    const newClient: Client = {
-      id: data.name.toLowerCase().replace(/\s+/g, '-'),
-      name: data.name,
-      color: data.color,
+  const handleAddOrUpdateClient = (data: { name: string; color: string }) => {
+    if (editingClient) {
+      const updatedClient: Client = {
+        ...editingClient,
+        name: data.name,
+        color: data.color,
+      }
+      saveClient(updatedClient)
+      toast({ title: "取引先を更新しました" })
+      setEditingClient(null)
+    } else {
+      const newClient: Client = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: data.name,
+        color: data.color,
+      }
+      saveClient(newClient)
+      toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
     }
-    saveClient(newClient)
     setClients(getClients())
-    toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
   }
 
   const handleDeleteClient = (clientId: string, clientName: string) => {
@@ -112,7 +125,10 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <Dialog open={isSettingsOpen} onOpenChange={(open) => {
+              setIsSettingsOpen(open)
+              if (!open) setEditingClient(null)
+            }}>
               <DialogTrigger asChild>
                 <SidebarMenuButton tooltip="設定">
                   <Settings className="h-4 w-4" />
@@ -134,14 +150,24 @@ export function SidebarNav() {
                             <div className={`w-3 h-3 rounded-full ${client.color}`} />
                             <span className="text-sm">{client.name}</span>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteClient(client.id, client.name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => setEditingClient(client)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteClient(client.id, client.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                       {clients.length === 0 && (
@@ -153,10 +179,16 @@ export function SidebarNav() {
                   <Separator />
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">新規取引先の追加</h4>
+                    <h4 className="text-sm font-medium">
+                      {editingClient ? "取引先の編集" : "新規取引先の追加"}
+                    </h4>
                     <ClientForm 
-                      onSubmit={handleAddClient}
-                      onCancel={() => setIsSettingsOpen(false)}
+                      initialClient={editingClient || undefined}
+                      onSubmit={handleAddOrUpdateClient}
+                      onCancel={() => {
+                        if (editingClient) setEditingClient(null)
+                        else setIsSettingsOpen(false)
+                      }}
                     />
                   </div>
                 </div>
