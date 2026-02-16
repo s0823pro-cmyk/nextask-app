@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, FileUp, Loader2 } from "lucide-react"
+import { CalendarIcon, FileUp, FileText, X } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,6 @@ import { Task } from "@/lib/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
-import { extractTaskFromPdf } from "@/ai/flows/extract-task-from-pdf"
 import { toast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
@@ -39,6 +38,8 @@ const formSchema = z.object({
   status: z.enum(["in_progress", "done"]),
   receptionDate: z.string(),
   dueDate: z.string(),
+  pdfName: z.string().optional(),
+  pdfData: z.string().optional(),
 })
 
 interface TaskFormProps {
@@ -48,7 +49,6 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
-  const [isExtracting, setIsExtracting] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -59,10 +59,14 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
       status: initialTask?.status === "todo" ? "in_progress" : (initialTask?.status || "in_progress"),
       receptionDate: initialTask?.receptionDate || format(new Date(), "yyyy-MM-dd"),
       dueDate: initialTask?.dueDate || format(new Date(), "yyyy-MM-dd"),
+      pdfName: initialTask?.pdfName || "",
+      pdfData: initialTask?.pdfData || "",
     },
   })
 
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const pdfName = form.watch("pdfName")
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -71,30 +75,20 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
       return
     }
 
-    setIsExtracting(true)
-    try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64 = reader.result as string
-        const result = await extractTaskFromPdf({ pdfDataUri: base64 })
-        
-        if (result) {
-          form.setValue("title", result.title)
-          form.setValue("description", result.description)
-          if (result.receptionDate) form.setValue("receptionDate", result.receptionDate)
-          if (result.dueDate) form.setValue("dueDate", result.dueDate)
-          
-          toast({ title: "抽出完了", description: "PDFからタスク情報を読み取りました。" })
-        }
-      }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error(error)
-      toast({ title: "エラー", description: "PDFの解析に失敗しました。", variant: "destructive" })
-    } finally {
-      setIsExtracting(false)
-      if (fileInputRef.current) fileInputRef.current.value = ""
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = reader.result as string
+      form.setValue("pdfData", base64)
+      form.setValue("pdfName", file.name)
+      toast({ title: "PDFを選択しました", description: file.name })
     }
+    reader.readAsDataURL(file)
+  }
+
+  const removePdf = () => {
+    form.setValue("pdfData", "")
+    form.setValue("pdfName", "")
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   return (
@@ -108,23 +102,28 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
               accept=".pdf"
               className="hidden"
               ref={fileInputRef}
-              onChange={handlePdfUpload}
+              onChange={handleFileChange}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isExtracting}
-              onClick={() => fileInputRef.current?.click()}
-              className="h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
-            >
-              {isExtracting ? (
-                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-              ) : (
+            {!pdfName ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+              >
                 <FileUp className="mr-2 h-3 w-3" />
-              )}
-              PDFデータ取り込み
-            </Button>
+                PDFファイルを選択
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 bg-muted p-1 px-2 rounded-md text-xs">
+                <FileText className="h-3 w-3 text-primary" />
+                <span className="max-w-[150px] truncate">{pdfName}</span>
+                <button type="button" onClick={removePdf} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

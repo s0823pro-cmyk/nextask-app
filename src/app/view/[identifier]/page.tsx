@@ -3,15 +3,15 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Circle, Clock, Calendar, LayoutDashboard, FileText } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip } from "lucide-react"
 import { format } from "date-fns"
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query } from "firebase/firestore"
-import { Task, TaskStatus } from "@/lib/types"
+import { collection } from "firebase/firestore"
+import { Task } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const statusConfig = {
@@ -38,8 +38,6 @@ export default function PublicClientView() {
   }
 
   const tasks = tasksData || []
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
-  const doneTasks = tasks.filter(t => t.status === 'done')
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -55,34 +53,12 @@ export default function PublicClientView() {
           <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
         </div>
 
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="bg-muted/50 p-1 mb-6">
-            <TabsTrigger value="all" className="px-6">すべて ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="in_progress" className="px-6">進行中 ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="done" className="px-6">完了 ({doneTasks.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tasks.map((task) => (
-                <PublicTaskCard key={task.id} task={task} />
-              ))}
-            </div>
-            {tasks.length === 0 && <EmptyState />}
-          </TabsContent>
-          <TabsContent value="in_progress" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {inProgressTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
-            </div>
-            {inProgressTasks.length === 0 && <EmptyState />}
-          </TabsContent>
-          <TabsContent value="done" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {doneTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
-            </div>
-            {doneTasks.length === 0 && <EmptyState />}
-          </TabsContent>
-        </Tabs>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tasks.map((task) => (
+            <PublicTaskCard key={task.id} task={task} />
+          ))}
+        </div>
+        {tasks.length === 0 && <EmptyState />}
       </div>
     </div>
   )
@@ -99,10 +75,18 @@ function PublicTaskCard({ task }: { task: Task }) {
       )} />
       
       <CardHeader className="p-5 pb-2">
-        <Badge variant="outline" className={cn("mb-3 font-bold px-2.5 py-0.5 text-[10px] uppercase tracking-wider", color)}>
-          <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
-          {label}
-        </Badge>
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5 text-[10px] uppercase tracking-wider", color)}>
+            <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
+            {label}
+          </Badge>
+          {task.pdfData && (
+            <Badge variant="secondary" className="px-2.5 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none">
+              <Paperclip className="w-3 h-3 mr-1" />
+              資料あり
+            </Badge>
+          )}
+        </div>
         <CardTitle className="text-xl font-bold leading-tight line-clamp-2">{task.title}</CardTitle>
       </CardHeader>
       

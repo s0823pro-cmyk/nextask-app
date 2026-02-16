@@ -9,6 +9,8 @@ export interface Task {
   receptionDate: string;
   dueDate: string;
   subtasks: string[];
+  pdfName?: string;
+  pdfData?: string;
   createdAt: string;
   updatedAt: string;
 }

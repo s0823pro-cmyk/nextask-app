@@ -2,7 +2,7 @@
 "use client"
 
 import { format } from "date-fns"
-import { Calendar, MoreVertical, CheckCircle2, Circle, Clock, FileText } from "lucide-react"
+import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -41,10 +41,18 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
       
       <CardHeader className="p-4 pb-2 space-y-0 flex flex-row items-start justify-between">
         <div className="flex-1 mr-2 pl-2">
-          <Badge variant="outline" className={cn("mb-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", color)}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {label}
-          </Badge>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", color)}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {label}
+            </Badge>
+            {task.pdfData && (
+              <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none">
+                <Paperclip className="w-2.5 h-2.5 mr-1" />
+                PDF
+              </Badge>
+            )}
+          </div>
           <h3 className="font-bold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
             {task.title}
           </h3>
@@ -85,13 +93,6 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
               <span>期日: {format(new Date(task.dueDate), "yyyy/MM/dd")}</span>
             </div>
           </div>
-          
-          {task.subtasks?.length > 0 && (
-            <div className="flex items-center gap-1 text-[9px] text-primary/70 font-bold uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
-              {task.subtasks.length} サブタスク
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
