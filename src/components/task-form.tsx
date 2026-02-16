@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, FileUp, FileText, X } from "lucide-react"
+import { FileUp, FileText, X } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -27,9 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Task } from "@/lib/types"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
@@ -166,37 +163,11 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             control={form.control}
             name="receptionDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel className="mb-1 text-sm font-semibold">受付日</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors text-sm",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-primary opacity-70" />
-                        {field.value ? (
-                          format(new Date(field.value), "yyyy/MM/dd")
-                        ) : (
-                          <span>日付を選択</span>
-                        )}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 shadow-xl border-border" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                      initialFocus
-                      className="rounded-md border-none"
-                    />
-                  </PopoverContent>
-                </Popover>
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">受付日</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} className="text-sm" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -206,37 +177,11 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             control={form.control}
             name="dueDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel className="mb-1 text-sm font-semibold">期日</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors text-sm",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-primary opacity-70" />
-                        {field.value ? (
-                          format(new Date(field.value), "yyyy/MM/dd")
-                        ) : (
-                          <span>日付を選択</span>
-                        )}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 shadow-xl border-border" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                      initialFocus
-                      className="rounded-md border-none"
-                    />
-                  </PopoverContent>
-                </Popover>
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">期日</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} className="text-sm" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
