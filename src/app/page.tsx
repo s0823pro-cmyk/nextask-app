@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, CheckCircle, Clock, Layout, Users, Search, X } from "lucide-react"
+import { ArrowRight, CheckCircle, Clock, Layout, Users, Search, X, AlertTriangle, Briefcase } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,12 +33,20 @@ export default function Home() {
 
   const stats = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    const todayTasksCount = (allTasks || []).filter(t => t.dueDate === today && t.status !== 'done').length
+    const tasks = allTasks || []
+    
+    const todayTasksCount = tasks.filter(t => t.dueDate === today && t.status !== 'done').length
+    const overdueTasksCount = tasks.filter(t => {
+      if (t.status === 'done') return false
+      return t.dueDate < today
+    }).length
 
     return {
       todayTasks: todayTasksCount,
+      overdueTasks: overdueTasksCount,
+      totalClients: clients?.length || 0
     }
-  }, [allTasks])
+  }, [allTasks, clients])
 
   // 検索フィルタリングロジック
   const filteredTasks = React.useMemo(() => {
@@ -141,7 +149,7 @@ export default function Home() {
       </div>
 
       {!searchQuery && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">今日のタスク</CardTitle>
@@ -150,6 +158,28 @@ export default function Home() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.todayTasks}</div>
               <p className="text-xs text-muted-foreground">全案件の今日の未完了数</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">期限切れ</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
+              <p className="text-xs text-muted-foreground">期日を過ぎた未完了タスク</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">登録取引先数</CardTitle>
+              <Briefcase className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalClients}</div>
+              <p className="text-xs text-muted-foreground">現在管理している取引先の総数</p>
             </CardContent>
           </Card>
         </div>
