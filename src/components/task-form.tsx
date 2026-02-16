@@ -32,6 +32,7 @@ import { toast } from "@/hooks/use-toast"
 const formSchema = z.object({
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
   description: z.string(),
+  constructionType: z.string().optional(),
   status: z.enum(["in_progress", "pending", "done"]),
   receptionDate: z.string(),
   dueDate: z.string(),
@@ -55,6 +56,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
     defaultValues: {
       title: initialTask?.title || "",
       description: initialTask?.description || "",
+      constructionType: initialTask?.constructionType || "",
       status: initialTask?.status === "todo" ? "in_progress" : (initialTask?.status || "in_progress"),
       receptionDate: initialTask?.receptionDate || format(new Date(), "yyyy-MM-dd"),
       dueDate: initialTask?.dueDate || format(new Date(), "yyyy-MM-dd"),
@@ -163,6 +165,30 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
               <FormControl>
                 <Input placeholder="例: 月次報告書の作成" {...field} className="text-sm" />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="constructionType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-semibold">工事内容</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <FormControl>
+                  <SelectTrigger className="border-muted-foreground/20 text-sm">
+                    <SelectValue placeholder="工事内容を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="原状回復工事">原状回復工事</SelectItem>
+                  <SelectItem value="入居中工事">入居中工事</SelectItem>
+                  <SelectItem value="共用部工事">共用部工事</SelectItem>
+                  <SelectItem value="保険案件">保険案件</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

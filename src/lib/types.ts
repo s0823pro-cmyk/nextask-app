@@ -1,3 +1,4 @@
+
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'done';
 
 export interface TaskPdf {
@@ -10,6 +11,7 @@ export interface Task {
   clientId: string;
   title: string;
   description: string;
+  constructionType?: string;
   status: TaskStatus;
   receptionDate: string;
   dueDate: string;

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Task": {
@@ -17,6 +18,11 @@
         "description": {
           "type": "string",
           "description": "A detailed description of the task."
+        },
+        "constructionType": {
+          "type": "string",
+          "description": "The type of construction work.",
+          "enum": ["原状回復工事", "入居中工事", "共用部工事", "保険案件"]
         },
         "receptionDate": {
           "type": "string",

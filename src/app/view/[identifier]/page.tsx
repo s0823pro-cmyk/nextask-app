@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink, HardHat } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,7 +61,8 @@ export default function PublicClientView() {
     if (!searchLower) return true;
 
     const matchText = (t.title?.toLowerCase() || "").includes(searchLower) || 
-                     (t.description?.toLowerCase() || "").includes(searchLower);
+                     (t.description?.toLowerCase() || "").includes(searchLower) ||
+                     (t.constructionType?.toLowerCase() || "").includes(searchLower);
     
     if (matchText) return true;
 
@@ -171,11 +172,17 @@ function PublicTaskCard({ task }: { task: Task }) {
       )} />
       
       <CardHeader className="p-4 pb-2">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
           <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px]", color)}>
             <StatusIcon className="w-3 h-3 mr-1" />
             {label}
           </Badge>
+          {task.constructionType && (
+            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700">
+              <HardHat className="w-3 h-3 mr-1" />
+              {task.constructionType}
+            </Badge>
+          )}
           {pdfCount > 0 && <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">資料 {pdfCount}件</Badge>}
         </div>
         <CardTitle className="text-lg font-bold line-clamp-2">{task.title}</CardTitle>
@@ -196,6 +203,12 @@ function PublicTaskCard({ task }: { task: Task }) {
             <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md">
               <div className="text-sm whitespace-pre-wrap">{task.description}</div>
+              {task.constructionType && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-xs font-bold text-muted-foreground mb-1">工事内容</p>
+                  <p className="text-sm">{task.constructionType}</p>
+                </div>
+              )}
             </ScrollArea>
           </DialogContent>
         </Dialog>
