@@ -256,33 +256,13 @@ export default function ClientDashboard() {
       <Tabs defaultValue="all" className="w-full">
         <div className="overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           <TabsList className="bg-muted/50 p-1 w-full justify-start md:justify-center">
-            <TabsTrigger value="all" className="flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="flex-1 min-w-[80px]">保留 ({pendingTasks.length})</TabsTrigger>
             <TabsTrigger value="awaiting_payment" className="flex-1 min-w-[80px]">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="flex-1 min-w-[80px]">完了 ({doneTasks.length})</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
           </TabsList>
         </div>
-        
-        <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {filteredTasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={handleEditClick}
-                onDelete={handleDeleteTask}
-                onStatusChange={handleStatusChange}
-              />
-            ))}
-          </div>
-          {!isLoading && filteredTasks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
-              <Plus className="h-12 w-12 mb-4 opacity-20" />
-              <p>タスクが見つかりませんでした。</p>
-            </div>
-          )}
-        </TabsContent>
         
         <TabsContent value="in_progress" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -314,6 +294,26 @@ export default function ClientDashboard() {
               <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="all" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {filteredTasks.map((task) => (
+              <TaskCard 
+                key={task.id} 
+                task={task} 
+                onEdit={handleEditClick}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+          </div>
+          {!isLoading && filteredTasks.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
+              <Plus className="h-12 w-12 mb-4 opacity-20" />
+              <p>タスクが見つかりませんでした。</p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

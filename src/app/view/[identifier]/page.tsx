@@ -118,14 +118,14 @@ export default function PublicClientView() {
 
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
-            <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
             <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="flex-1">完了 ({doneTasks.length})</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
           </TabsList>
 
-          {["all", "in_progress", "pending", "awaiting_payment", "done"].map((val) => {
+          {["in_progress", "pending", "awaiting_payment", "done", "all"].map((val) => {
             const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : val === "awaiting_payment" ? awaitingPaymentTasks : doneTasks
             return (
               <TabsContent key={val} value={val} className="mt-6">
