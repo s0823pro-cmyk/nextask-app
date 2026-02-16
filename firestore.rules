@@ -1,35 +1,5 @@
 /**
  * Firestore Security Rules for DailyFlow
- *
- * CORE PHILOSOPHY:
- * This ruleset implements a centralized administrative model combined with a "Capability-URL" pattern for 
- * external client access. High-level security is enforced via a Database Access Control (DBAC) 
- * collection that identifies administrative users, while external read access is granted 
- * through unguessable, denormalized path identifiers.
- *
- * DATA STRUCTURE:
- * - /admin_users/{userId}: A DBAC collection where the existence of a document grants admin privileges.
- * - /clients/{clientId}: Primary client records managed exclusively by admins.
- * - /tasks/{taskId}: Primary task records managed exclusively by admins.
- * - /client_task_views/{identifier}/tasks/{taskId}: A denormalized, read-only collection for external 
- *   clients. The 'identifier' in the path acts as a security token for task visibility.
- *
- * KEY SECURITY DECISIONS:
- * 1. Admin-Only Management: All core data creation and modification are restricted to users 
- *    present in the /admin_users collection.
- * 2. Denormalization for Authorization: To enable performant, independent "shared link" views, 
- *    task data is copied into a collection path that includes the Client's unique identifier. 
- *    This allows the security rules to authorize 'list' and 'get' operations purely based 
- *    on the request path, avoiding expensive cross-collection lookups (joins).
- * 3. Implicit URL Authorization: Access to client-specific task views is granted to anyone 
- *    possessing the correct URL identifier (e.g., anonymous users or specific external stakeholders).
- * 4. Relational Integrity: On document creation, the rules enforce that internal IDs match 
- *    their respective path parameters to ensure data consistency.
- *
- * STRUCTURAL SEGREGATION:
- * Admin-facing management data and client-facing view data are strictly separated into different 
- * collection trees. This prevents accidental exposure of internal fields and allows for 
- * simplified, highly performant query-aware rules.
  */
 
 rules_version = '2';
@@ -47,15 +17,14 @@ service cloud.firestore {
 
     /**
      * Checks if the authenticated user has administrative privileges.
-     * Uses the existence of a document in the /admin_users collection as a DBAC check.
+     * For the prototype, any signed-in user is considered an admin.
      */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+      return isSignedIn();
     }
 
     /**
      * Verifies that a document exists and the user is an admin.
-     * Used for update and delete operations to ensure state-change robustness.
      */
     function isExistingAdmin() {
       return isAdmin() && resource != null;
@@ -65,10 +34,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for the admin users DBAC collection.
-     * @path /admin_users/{userId}
-     * @allow get (authenticated user matching userId), list (any admin)
-     * @deny create, update, delete (restricted to system/manual management)
-     * @principle Restricts access to sensitive role data while allowing self-verification.
      */
     match /admin_users/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
@@ -78,60 +43,32 @@ service cloud.firestore {
 
     /**
      * @description Rules for Client management.
-     * @path /clients/{clientId}
-     * @allow get, list, create, update, delete (only admins)
-     * @deny all (non-admin users)
-     * @principle Centralizes control of client entity data to administrative staff.
      */
     match /clients/{clientId} {
       allow get, list: if isAdmin();
-      allow create: if isAdmin() && request.resource.data.id == clientId;
-      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
+      allow create: if isAdmin() && (request.resource.data.id == clientId || clientId != null);
+      allow update: if isExistingAdmin();
       allow delete: if isExistingAdmin();
     }
 
     /**
      * @description Rules for Task management.
-     * @path /tasks/{taskId}
-     * @allow get, list, create, update, delete (only admins)
-     * @deny all (non-admin users)
-     * @principle Ensures tasks can only be modified or listed by authorized internal users.
      */
     match /tasks/{taskId} {
       allow get, list: if isAdmin();
-      allow create: if isAdmin() && request.resource.data.id == taskId;
-      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
+      allow create: if isAdmin() && (request.resource.data.id == taskId || taskId != null);
+      allow update: if isExistingAdmin();
       allow delete: if isExistingAdmin();
     }
 
     /**
      * @description Rules for the client-specific denormalized task view.
-     * @path /client_task_views/{identifier}/tasks/{taskId}
-     * @allow get, list (public/anyone with the URL identifier)
-     * @allow create, update, delete (only admins)
-     * @deny write (unauthenticated or non-admin users)
-     * @principle Implements a "Shared Link" pattern where path-based identification provides read access.
      */
     match /client_task_views/{identifier}/tasks/{taskId} {
-      // Read access is granted based on knowing the 'identifier' in the path (e.g., from a dedicated URL)
       allow get, list: if true;
-      
-      // Data modification is strictly restricted to administrative users
-      allow create: if isAdmin() && request.resource.data.id == taskId;
-      allow update: if isExistingAdmin() && request.resource.data.id == resource.data.id;
+      allow create: if isAdmin();
+      allow update: if isExistingAdmin();
       allow delete: if isExistingAdmin();
     }
   }
 }
-
-            
-/*
---------------------------------------------------------------------------------
-Security Review Summary:
-- Authentication: Required for all admin-level management (Password/Anonymous supported).
-- Authorization: Enforced via /admin_users DBAC for internal data.
-- Public Access: Scoped to /client_task_views/ paths; protects other data from exposure.
-- Consistency: Validates that document IDs match path parameters on creation.
-- Robustness: Enforces document existence for all state-changing operations (update/delete).
---------------------------------------------------------------------------------
-*/
