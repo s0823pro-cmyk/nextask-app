@@ -34,7 +34,7 @@ git push -u origin main
 
 #### B. どうしてもエラーが出る場合の「最終手段」
 GitHubで発行したトークン（例: `ghp_xxxx...`）を直接URLに埋め込んで送信します。
-以下の `[トークン]` の部分を自分のトークンに書き換えて実行してください。
+以下の `[あなたのトークン]` の部分を自分のトークンに書き換えて実行してください。
 ```bash
 git remote set-url origin https://[あなたのトークン]@github.com/s0823pro-cmyk/nextask-app.git
 git push -u origin main
