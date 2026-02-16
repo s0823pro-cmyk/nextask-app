@@ -24,20 +24,19 @@ interface TaskCardProps {
 }
 
 const statusConfig = {
-  todo: { label: "未着手", color: "bg-muted text-muted-foreground border-transparent", icon: Circle },
+  todo: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
   done: { label: "完了", color: "bg-primary/10 text-primary border-primary/20", icon: CheckCircle2 },
 }
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
-  const { label, color, icon: StatusIcon } = statusConfig[task.status]
+  const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden relative">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : 
-        task.status === 'in_progress' ? "bg-blue-500" : "bg-muted-foreground/30"
+        task.status === 'done' ? "bg-primary" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-4 pb-2 space-y-0 flex flex-row items-start justify-between">
@@ -58,7 +57,6 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 shadow-xl">
             <DropdownMenuItem onClick={() => onEdit(task)}>編集</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onStatusChange(task.id, 'todo')}>未着手に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'in_progress')}>進行中に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'done')}>完了に変更</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => onDelete(task.id)}>

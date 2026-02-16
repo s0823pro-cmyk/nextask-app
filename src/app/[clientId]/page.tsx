@@ -44,7 +44,6 @@ export default function ClientDashboard() {
   const handleCreateTask = (data: Partial<Task>) => {
     if (!client) return;
     
-    // ダイアログを閉じる指示のみを出す
     setIsCreateOpen(false);
     
     const now = new Date().toISOString();
@@ -53,7 +52,7 @@ export default function ClientDashboard() {
       clientId,
       title: data.title || "",
       description: data.description || "",
-      status: data.status || "todo",
+      status: data.status || "in_progress",
       receptionDate: data.receptionDate || now.split('T')[0],
       dueDate: data.dueDate || now.split('T')[0],
       subtasks: [],
@@ -68,9 +67,6 @@ export default function ClientDashboard() {
   const handleUpdateTask = (data: Partial<Task>) => {
     if (!editingTask || !client) return;
     
-    // ダイアログを閉じる指示のみを出す。
-    // editingTaskをここでnullにするとダイアログの中身が即座に消えてしまい、
-    // クローズ処理が正常に終了しなくなるため、onOpenChangeで処理する。
     setIsEditOpen(false);
     
     const updatedTask: Task = { 
@@ -117,8 +113,7 @@ export default function ClientDashboard() {
     t.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const todoTasks = filteredTasks.filter(t => t.status === 'todo')
-  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress')
+  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
@@ -173,7 +168,6 @@ export default function ClientDashboard() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="all">すべて ({filteredTasks.length})</TabsTrigger>
-          <TabsTrigger value="todo">未着手 ({todoTasks.length})</TabsTrigger>
           <TabsTrigger value="in_progress">進行中 ({inProgressTasks.length})</TabsTrigger>
           <TabsTrigger value="done">完了 ({doneTasks.length})</TabsTrigger>
         </TabsList>
@@ -198,13 +192,6 @@ export default function ClientDashboard() {
           )}
         </TabsContent>
         
-        <TabsContent value="todo" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {todoTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
-        </TabsContent>
         <TabsContent value="in_progress" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {inProgressTasks.map((task) => (
@@ -224,8 +211,6 @@ export default function ClientDashboard() {
       <Dialog open={isEditOpen} onOpenChange={(open) => {
         setIsEditOpen(open)
         if (!open) {
-          // ダイアログが閉じられたときにステータスをクリアする。
-          // これにより閉じアニメーション中にコンテンツが消えるのを防ぐ。
           setEditingTask(null)
         }
       }}>

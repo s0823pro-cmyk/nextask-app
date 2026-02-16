@@ -15,7 +15,7 @@ import { Task, TaskStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const statusConfig = {
-  todo: { label: "未着手", color: "bg-muted text-muted-foreground", icon: Circle },
+  todo: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
@@ -38,8 +38,7 @@ export default function PublicClientView() {
   }
 
   const tasks = tasksData || []
-  const todoTasks = tasks.filter(t => t.status === 'todo')
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress')
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const doneTasks = tasks.filter(t => t.status === 'done')
 
   return (
@@ -59,7 +58,6 @@ export default function PublicClientView() {
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="bg-muted/50 p-1 mb-6">
             <TabsTrigger value="all" className="px-6">すべて ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="todo" className="px-6">未着手 ({todoTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="px-6">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="px-6">完了 ({doneTasks.length})</TabsTrigger>
           </TabsList>
@@ -71,12 +69,6 @@ export default function PublicClientView() {
               ))}
             </div>
             {tasks.length === 0 && <EmptyState />}
-          </TabsContent>
-          <TabsContent value="todo" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {todoTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
-            </div>
-            {todoTasks.length === 0 && <EmptyState />}
           </TabsContent>
           <TabsContent value="in_progress" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -97,14 +89,13 @@ export default function PublicClientView() {
 }
 
 function PublicTaskCard({ task }: { task: Task }) {
-  const { label, color, icon: StatusIcon } = statusConfig[task.status]
+  const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
   return (
     <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : 
-        task.status === 'in_progress' ? "bg-blue-500" : "bg-muted-foreground/30"
+        task.status === 'done' ? "bg-primary" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-5 pb-2">
