@@ -1,15 +1,8 @@
 'use client';
 
 import { 
-  collection, 
   doc, 
-  query, 
-  where, 
-  getDocs,
-  setDoc,
-  deleteDoc,
-  Firestore,
-  writeBatch
+  Firestore
 } from 'firebase/firestore';
 import { Task, Client } from './types';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -28,13 +21,18 @@ export function saveTaskWithSync(db: Firestore, task: Task, clientIdentifier: st
 
 /**
  * 取引先のタスクを削除する際、両方のコレクションから削除します。
+ * clientIdentifier が不明な場合でも、マスターデータ（/tasks）からは必ず削除を試みます。
  */
-export function deleteTaskWithSync(db: Firestore, taskId: string, clientIdentifier: string) {
+export function deleteTaskWithSync(db: Firestore, taskId: string, clientIdentifier?: string) {
+  // 管理者用マスターデータから削除
   const taskRef = doc(db, 'tasks', taskId);
-  const viewRef = doc(db, 'client_task_views', clientIdentifier, 'tasks', taskId);
-
   deleteDocumentNonBlocking(taskRef);
-  deleteDocumentNonBlocking(viewRef);
+
+  // 取引先専用ビューから削除（識別子がある場合）
+  if (clientIdentifier) {
+    const viewRef = doc(db, 'client_task_views', clientIdentifier, 'tasks', taskId);
+    deleteDocumentNonBlocking(viewRef);
+  }
 }
 
 /**
@@ -46,7 +44,7 @@ export function saveClientFirestore(db: Firestore, client: Client) {
 }
 
 /**
- * 取引先を削除します（関連タスクのクリーンアップは本来サーバーサイドやバッチで行うべきですが、ここでは簡易的にクライアントのみ）。
+ * 取引先を削除します。
  */
 export function deleteClientFirestore(db: Firestore, clientId: string) {
   const clientRef = doc(db, 'clients', clientId);

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -117,12 +116,10 @@ export default function ClientDashboard() {
   }
 
   const confirmDeleteTask = () => {
-    if (taskToDelete && client) {
-      deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
+    if (taskToDelete) {
+      // 取引先情報の読み込みを待たずにマスターからは削除を試みる
+      deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
       toast({ title: "タスクを削除しました", variant: "destructive" });
-      setTaskToDelete(null);
-    } else if (taskToDelete) {
-      // client情報がまだない場合などのフォールバック
       setTaskToDelete(null);
     }
   }

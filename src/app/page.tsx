@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -157,12 +156,11 @@ export default function Home() {
     if (taskToDelete) {
       const task = allTasks?.find(t => t.id === taskToDelete);
       const client = clients?.find(c => c.id === task?.clientId);
-      if (task && client) {
-        deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
-        toast({ title: "タスクを削除しました", variant: "destructive" });
-      } else {
-        console.error("Task or client not found for deletion", { taskToDelete, task, client });
-      }
+      
+      // 取引先情報が見つからなくても、マスターからは削除を試みる
+      deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
+      toast({ title: "タスクを削除しました", variant: "destructive" });
+      
       setTaskToDelete(null);
     }
   }
@@ -292,7 +290,6 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 {sortedClients.map((client) => {
                   const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
-                  // bg-blue-500 から border-blue-500 を生成
                   const borderColor = client.color.replace('bg-', 'border-')
                   return (
                     <Link 
