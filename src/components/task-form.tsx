@@ -5,14 +5,13 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Sparkles, Loader2, CalendarIcon } from "lucide-react"
+import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,8 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Task, TaskStatus } from "@/lib/types"
-import { taskDescriptionEnhancement } from "@/ai/flows/task-description-enhancement"
+import { Task } from "@/lib/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
@@ -48,8 +46,6 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
-  const [isEnhancing, setIsEnhancing] = React.useState(false)
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,25 +57,6 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
     },
   })
 
-  const handleEnhance = async () => {
-    const title = form.getValues("title")
-    if (!title) return
-
-    setIsEnhancing(true)
-    try {
-      const result = await taskDescriptionEnhancement({ briefDescription: title })
-      form.setValue("description", result.detailedDescription)
-      if (result.subtasks && result.subtasks.length > 0) {
-        const subtasksText = result.subtasks.map(s => `• ${s}`).join('\n')
-        form.setValue("description", `${result.detailedDescription}\n\n【推奨サブタスク】\n${subtasksText}`)
-      }
-    } catch (error) {
-      console.error("AI enhancement failed", error)
-    } finally {
-      setIsEnhancing(false)
-    }
-  }
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-6">
@@ -90,20 +67,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             <FormItem>
               <FormLabel className="text-sm font-semibold">タスク名</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Input placeholder="例: 月次報告書の作成" className="pr-24" {...field} />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 text-primary hover:text-primary/80 h-8"
-                    onClick={handleEnhance}
-                    disabled={!field.value || isEnhancing}
-                  >
-                    {isEnhancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-                    AI提案
-                  </Button>
-                </div>
+                <Input placeholder="例: 月次報告書の作成" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -216,7 +180,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-sm font-semibold">ステータス</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="border-muted-foreground/20">
                     <SelectValue placeholder="ステータスを選択" />
