@@ -17,6 +17,16 @@ import { saveTaskWithSync, deleteTaskWithSync } from "@/lib/task-service"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
 
+// 並び替えのためのカラー順序定義
+const COLOR_ORDER: Record<string, number> = {
+  "bg-blue-500": 1,
+  "bg-green-500": 2,
+  "bg-orange-500": 3,
+  "bg-red-500": 4,
+  "bg-purple-500": 5,
+  "bg-pink-500": 6,
+}
+
 export default function Home() {
   const db = useFirestore()
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -43,6 +53,16 @@ export default function Home() {
 
   const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
   const { data: allTasks = [] } = useCollection<Task>(tasksRef);
+
+  // カラー順でソートされた取引先リスト
+  const sortedClients = React.useMemo(() => {
+    return [...(clients || [])].sort((a, b) => {
+      const orderA = COLOR_ORDER[a.color] || 99
+      const orderB = COLOR_ORDER[b.color] || 99
+      if (orderA !== orderB) return orderA - orderB
+      return a.name.localeCompare(b.name, "ja")
+    })
+  }, [clients])
 
   const stats = React.useMemo(() => {
     if (!mounted) return { todayTasks: 0, overdueTasks: 0, totalClients: 0 }
@@ -238,13 +258,15 @@ export default function Home() {
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-0 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                {(clients || []).map((client) => {
+                {sortedClients.map((client) => {
                   const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
+                  // bg-blue-500 から border-blue-500 を生成
+                  const borderColor = client.color.replace('bg-', 'border-')
                   return (
                     <Link 
                       key={client.id} 
                       href={`/${client.id}`}
-                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors active:scale-[0.98]"
+                      className={`flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors active:scale-[0.98] border-l-4 ${borderColor}`}
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full ${client.color}`} />
