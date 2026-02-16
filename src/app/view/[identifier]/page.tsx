@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,7 +27,7 @@ export default function PublicClientView() {
   const tasksQuery = useMemoFirebase(() => {
     return collection(db, 'client_task_views', identifier, 'tasks');
   }, [db, identifier]);
-  const { data: tasks = [], isLoading } = useCollection<Task>(tasksQuery);
+  const { data: tasksData, isLoading } = useCollection<Task>(tasksQuery);
 
   if (isLoading) {
     return (
@@ -36,6 +37,7 @@ export default function PublicClientView() {
     )
   }
 
+  const tasks = tasksData || []
   const todoTasks = tasks.filter(t => t.status === 'todo')
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress')
   const doneTasks = tasks.filter(t => t.status === 'done')
@@ -72,16 +74,19 @@ export default function PublicClientView() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {todoTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
+            {todoTasks.length === 0 && <EmptyState />}
           </TabsContent>
           <TabsContent value="in_progress" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {inProgressTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
+            {inProgressTasks.length === 0 && <EmptyState />}
           </TabsContent>
           <TabsContent value="done" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {doneTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
+            {doneTasks.length === 0 && <EmptyState />}
           </TabsContent>
         </Tabs>
       </div>
@@ -114,7 +119,7 @@ function PublicTaskCard({ task }: { task: Task }) {
             <Calendar className="w-3 h-3 mr-1" />
             {format(new Date(task.dueDate), "yyyy/MM/dd")}
           </div>
-          <div className="ml-auto text-muted-foreground italic">
+          <div className="ml-auto text-muted-foreground italic text-[10px]">
             最終更新: {format(new Date(task.updatedAt), "HH:mm")}
           </div>
         </div>
