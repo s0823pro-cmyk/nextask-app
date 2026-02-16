@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, FileUp, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,8 @@ import { Task } from "@/lib/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import { extractTaskFromPdf } from "@/ai/flows/extract-task-from-pdf"
+import { toast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
@@ -46,6 +48,9 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
+  const [isExtracting, setIsExtracting] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,9 +62,72 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
     },
   })
 
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (file.type !== "application/pdf") {
+      toast({ title: "エラー", description: "PDFファイルを選択してください。", variant: "destructive" })
+      return
+    }
+
+    setIsExtracting(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = reader.result as string
+        const result = await extractTaskFromPdf({ pdfDataUri: base64 })
+        
+        if (result) {
+          form.setValue("title", result.title)
+          form.setValue("description", result.description)
+          if (result.receptionDate) form.setValue("receptionDate", result.receptionDate)
+          if (result.dueDate) form.setValue("dueDate", result.dueDate)
+          
+          toast({ title: "抽出完了", description: "PDFからタスク情報を読み取りました。" })
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error(error)
+      toast({ title: "エラー", description: "PDFの解析に失敗しました。", variant: "destructive" })
+    } finally {
+      setIsExtracting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <FormLabel className="text-sm font-semibold">基本情報</FormLabel>
+          <div>
+            <input
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handlePdfUpload}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isExtracting}
+              onClick={() => fileInputRef.current?.click()}
+              className="h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+            >
+              {isExtracting ? (
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              ) : (
+                <FileUp className="mr-2 h-3 w-3" />
+              )}
+              PDFデータ取り込み
+            </Button>
+          </div>
+        </div>
+
         <FormField
           control={form.control}
           name="title"
