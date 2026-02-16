@@ -18,7 +18,7 @@ Firebase App Hosting を利用するには、まずコードを GitHub に保存
 - 作成後の画面に表示されるリポジトリの URL（`https://github.com/ユーザー名/リポジトリ名.git`）をコピー。
 
 ### 2. 開発環境のターミナルで実行
-開発環境（Firebase Studio）の下部にあるターミナルを開き、以下のコマンドを順に実行します。
+開発環境（Firebase Studio）の**画面下部にある「Terminal」タブ**をクリックして開き、以下のコマンドを順に実行します。
 
 ```bash
 # Gitの初期化
