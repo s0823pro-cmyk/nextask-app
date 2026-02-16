@@ -118,7 +118,6 @@ export default function ClientDashboard() {
 
   const confirmDeleteTask = () => {
     if (taskToDelete) {
-      // 取引先情報の読み込みを待たずにマスターからは削除を試みる
       deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
       toast({ title: "タスクを削除しました", variant: "destructive" });
       setTaskToDelete(null);
@@ -201,6 +200,7 @@ export default function ClientDashboard() {
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
+  const awaitingPaymentTasks = filteredTasks.filter(t => t.status === 'awaiting_payment')
   const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
@@ -259,6 +259,7 @@ export default function ClientDashboard() {
             <TabsTrigger value="all" className="flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="flex-1 min-w-[80px]">保留 ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="awaiting_payment" className="flex-1 min-w-[80px]">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="flex-1 min-w-[80px]">完了 ({doneTasks.length})</TabsTrigger>
           </TabsList>
         </div>
@@ -294,6 +295,14 @@ export default function ClientDashboard() {
         <TabsContent value="pending" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {pendingTasks.map((task) => (
+              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="awaiting_payment" className="mt-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {awaitingPaymentTasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>

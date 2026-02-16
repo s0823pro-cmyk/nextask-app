@@ -36,7 +36,8 @@
         },
         "status": {
           "type": "string",
-          "description": "The current progress status of the task (in_progress, pending, done)."
+          "description": "The current progress status of the task.",
+          "enum": ["todo", "in_progress", "pending", "awaiting_payment", "done"]
         },
         "pdfs": {
           "type": "array",

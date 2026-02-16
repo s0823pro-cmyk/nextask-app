@@ -2,7 +2,7 @@
 "use client"
 
 import { format } from "date-fns"
-import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat } from "lucide-react"
+import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,9 +12,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
@@ -29,6 +29,7 @@ const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
   pending: { label: "保留", color: "bg-orange-50 text-orange-600 border-orange-200", icon: Clock },
+  awaiting_payment: { label: "入金待ち", color: "bg-amber-50 text-amber-600 border-amber-200", icon: Coins },
   done: { label: "完了", color: "bg-primary/10 text-primary border-primary/20", icon: CheckCircle2 },
 }
 
@@ -51,7 +52,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden relative">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : "bg-blue-500"
+        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : task.status === 'awaiting_payment' ? "bg-amber-500" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-4 pb-2 space-y-0 flex flex-row items-start justify-between">
@@ -90,6 +91,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
             <DropdownMenuLabel className="text-[10px] text-muted-foreground">ステータス</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'in_progress')}>進行中に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'pending')}>保留に変更</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onStatusChange(task.id, 'awaiting_payment')}>入金待ちに変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'done')}>完了に変更</DropdownMenuItem>
             
             {pdfCount > 0 && (

@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { FileUp, FileText, X, Plus } from "lucide-react"
+import { FileText, X, Plus } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,7 @@ const formSchema = z.object({
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
   description: z.string(),
   constructionType: z.string().optional(),
-  status: z.enum(["in_progress", "pending", "done"]),
+  status: z.enum(["in_progress", "pending", "done", "awaiting_payment"]),
   receptionDate: z.string(),
   dueDate: z.string(),
   pdfs: z.array(z.object({
@@ -257,6 +257,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
                 <SelectContent>
                   <SelectItem value="in_progress">進行中</SelectItem>
                   <SelectItem value="pending">保留</SelectItem>
+                  <SelectItem value="awaiting_payment">入金待ち</SelectItem>
                   <SelectItem value="done">完了</SelectItem>
                 </SelectContent>
               </Select>

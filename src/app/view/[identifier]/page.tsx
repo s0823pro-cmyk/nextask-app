@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink, HardHat } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink, HardHat, Coins } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +28,7 @@ const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   pending: { label: "保留", color: "bg-orange-50 text-orange-700", icon: Clock },
+  awaiting_payment: { label: "入金待ち", color: "bg-amber-50 text-amber-700", icon: Coins },
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
 
@@ -87,6 +88,7 @@ export default function PublicClientView() {
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
+  const awaitingPaymentTasks = filteredTasks.filter(t => t.status === 'awaiting_payment')
   const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
@@ -119,11 +121,12 @@ export default function PublicClientView() {
             <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
             <TabsTrigger value="done" className="flex-1">完了 ({doneTasks.length})</TabsTrigger>
           </TabsList>
 
-          {["all", "in_progress", "pending", "done"].map((val) => {
-            const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : doneTasks
+          {["all", "in_progress", "pending", "awaiting_payment", "done"].map((val) => {
+            const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : val === "awaiting_payment" ? awaitingPaymentTasks : doneTasks
             return (
               <TabsContent key={val} value={val} className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -172,7 +175,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   return (
     <Card className="border-border/50 relative flex flex-col group overflow-hidden">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : "bg-blue-500"
+        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : task.status === 'awaiting_payment' ? "bg-amber-500" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-4 pb-2">
