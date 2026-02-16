@@ -18,6 +18,11 @@
           "type": "string",
           "description": "A detailed description of the task, potentially augmented by AI."
         },
+        "receptionDate": {
+          "type": "string",
+          "description": "The date when the task was received.",
+          "format": "date"
+        },
         "dueDate": {
           "type": "string",
           "description": "The date and time by which the task is expected to be completed.",
@@ -46,6 +51,7 @@
         "id",
         "title",
         "description",
+        "receptionDate",
         "dueDate",
         "status",
         "createdAt",

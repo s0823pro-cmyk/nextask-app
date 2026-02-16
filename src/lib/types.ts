@@ -6,6 +6,7 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  receptionDate: string;
   dueDate: string;
   subtasks: string[];
   createdAt: string;

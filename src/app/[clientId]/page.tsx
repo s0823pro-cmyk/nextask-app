@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { Plus, Search, SlidersHorizontal, Share2, Copy, Check } from "lucide-react"
+import { Plus, Search, Share2, Check } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import { Button } from "@/components/ui/button"
@@ -31,11 +31,9 @@ export default function ClientDashboard() {
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [copied, setCopied] = React.useState(false)
 
-  // 取引先情報の取得
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
-  // タスク一覧の取得
   const tasksQuery = useMemoFirebase(() => {
     return query(collection(db, 'tasks'), where('clientId', '==', clientId));
   }, [db, clientId]);
@@ -50,6 +48,7 @@ export default function ClientDashboard() {
       title: data.title || "",
       description: data.description || "",
       status: data.status || "todo",
+      receptionDate: data.receptionDate || now.split('T')[0],
       dueDate: data.dueDate || now.split('T')[0],
       subtasks: [],
       createdAt: now,
@@ -182,7 +181,6 @@ export default function ClientDashboard() {
           )}
         </TabsContent>
         
-        {/* ... other TabsContent remain similar, just filtered ... */}
         <TabsContent value="todo" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {todoTasks.map((task) => (

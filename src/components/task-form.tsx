@@ -36,6 +36,7 @@ const formSchema = z.object({
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
   description: z.string(),
   status: z.enum(["todo", "in_progress", "done"]),
+  receptionDate: z.string(),
   dueDate: z.string(),
 })
 
@@ -54,6 +55,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
       title: initialTask?.title || "",
       description: initialTask?.description || "",
       status: initialTask?.status || "todo",
+      receptionDate: initialTask?.receptionDate || format(new Date(), "yyyy-MM-dd"),
       dueDate: initialTask?.dueDate || format(new Date(), "yyyy-MM-dd"),
     },
   })
@@ -66,7 +68,6 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
     try {
       const result = await taskDescriptionEnhancement({ briefDescription: title })
       form.setValue("description", result.detailedDescription)
-      // For simplicity in this demo, we can display subtasks as text or handle separately
       if (result.subtasks && result.subtasks.length > 0) {
         const subtasksText = result.subtasks.map(s => `• ${s}`).join('\n')
         form.setValue("description", `${result.detailedDescription}\n\n【推奨サブタスク】\n${subtasksText}`)
@@ -129,22 +130,38 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="status"
+            name="receptionDate"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>ステータス</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="ステータスを選択" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="todo">未着手</SelectItem>
-                    <SelectItem value="in_progress">進行中</SelectItem>
-                    <SelectItem value="done">完了</SelectItem>
-                  </SelectContent>
-                </Select>
+              <FormItem className="flex flex-col">
+                <FormLabel className="mb-2">受付日</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), "yyyy/MM/dd")
+                        ) : (
+                          <span>日付を選択</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -180,9 +197,6 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
                       onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                      disabled={(date) =>
-                        date < new Date(new Date().setHours(0, 0, 0, 0))
-                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -192,6 +206,29 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ステータス</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="ステータスを選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="todo">未着手</SelectItem>
+                  <SelectItem value="in_progress">進行中</SelectItem>
+                  <SelectItem value="done">完了</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>

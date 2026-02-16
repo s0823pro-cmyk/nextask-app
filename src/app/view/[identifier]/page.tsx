@@ -1,9 +1,8 @@
-
 "use client"
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Circle, Clock, Calendar, LayoutDashboard } from "lucide-react"
+import { CheckCircle2, Circle, Clock, Calendar, LayoutDashboard, FileText } from "lucide-react"
 import { format } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -111,15 +110,21 @@ function PublicTaskCard({ task }: { task: Task }) {
         <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[3rem]">
           {task.description || "詳細説明はありません。"}
         </p>
-        <div className="flex items-center text-xs font-medium">
-          <div className={cn(
-            "flex items-center px-2 py-1 rounded-md",
-            isOverdue ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-          )}>
-            <Calendar className="w-3 h-3 mr-1" />
-            {format(new Date(task.dueDate), "yyyy/MM/dd")}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4 text-xs font-medium">
+             <div className="flex items-center text-muted-foreground">
+              <FileText className="w-3 h-3 mr-1" />
+              受付: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy/MM/dd") : "-"}
+            </div>
+            <div className={cn(
+              "flex items-center px-2 py-1 rounded-md",
+              isOverdue ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+            )}>
+              <Calendar className="w-3 h-3 mr-1" />
+              期日: {format(new Date(task.dueDate), "yyyy/MM/dd")}
+            </div>
           </div>
-          <div className="ml-auto text-muted-foreground italic text-[10px]">
+          <div className="text-muted-foreground italic text-[10px]">
             最終更新: {format(new Date(task.updatedAt), "HH:mm")}
           </div>
         </div>

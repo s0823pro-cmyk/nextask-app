@@ -1,7 +1,7 @@
 "use client"
 
 import { format } from "date-fns"
-import { Calendar, MoreVertical, CheckCircle2, Circle, Clock } from "lucide-react"
+import { Calendar, MoreVertical, CheckCircle2, Circle, Clock, FileText } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -65,18 +65,24 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
         <p className="text-sm text-muted-foreground line-clamp-2 mb-4 min-h-[2.5rem]">
           {task.description || "説明なし"}
         </p>
-        <div className="flex items-center text-xs font-medium">
-          <div className={cn(
-            "flex items-center px-2 py-1 rounded-md",
-            isOverdue ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-          )}>
-            <Calendar className="w-3 h-3 mr-1" />
-            {format(new Date(task.dueDate), "yyyy/MM/dd")}
+        <div className="space-y-2">
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <div className="flex items-center text-muted-foreground">
+              <FileText className="w-3 h-3 mr-1" />
+              受付: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy/MM/dd") : "-"}
+            </div>
+            <div className={cn(
+              "flex items-center px-2 py-1 rounded-md",
+              isOverdue ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+            )}>
+              <Calendar className="w-3 h-3 mr-1" />
+              期日: {format(new Date(task.dueDate), "yyyy/MM/dd")}
+            </div>
           </div>
           {task.subtasks?.length > 0 && (
-            <span className="ml-auto text-muted-foreground">
+            <div className="text-[10px] text-muted-foreground">
               {task.subtasks.length} サブタスク
-            </span>
+            </div>
           )}
         </div>
       </CardContent>
