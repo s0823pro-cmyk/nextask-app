@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -154,15 +154,15 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }, [task.dueDate, task.status])
 
-  const handleViewPdf = () => {
-    if (task.pdfData) {
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<iframe width='100%' height='100%' src='${task.pdfData}'></iframe>`);
-        newWindow.document.title = task.pdfName || "資料";
-      }
+  const handleViewPdf = (pdfData: string, pdfName: string) => {
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
+      newWindow.document.title = pdfName || "資料";
     }
   }
+
+  const pdfCount = task.pdfs?.length || 0
 
   return (
     <Card className="border-border/50 relative flex flex-col group overflow-hidden">
@@ -176,7 +176,7 @@ function PublicTaskCard({ task }: { task: Task }) {
             <StatusIcon className="w-3 h-3 mr-1" />
             {label}
           </Badge>
-          {task.pdfData && <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">資料あり</Badge>}
+          {pdfCount > 0 && <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">資料 {pdfCount}件</Badge>}
         </div>
         <CardTitle className="text-lg font-bold line-clamp-2">{task.title}</CardTitle>
       </CardHeader>
@@ -200,17 +200,37 @@ function PublicTaskCard({ task }: { task: Task }) {
           </DialogContent>
         </Dialog>
         
-        <div className="space-y-2 mt-auto">
-          <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-            <FileText className="w-3 h-3" /> 受付: {formatDateSafe(task.receptionDate)}
+        <div className="space-y-3 mt-auto">
+          <div className="space-y-1.5">
+            <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+              <FileText className="w-3 h-3" /> 受付: {formatDateSafe(task.receptionDate)}
+            </div>
+            <div className={cn("text-[10px] flex items-center gap-2 p-1.5 rounded", isOverdue ? "bg-destructive/5 text-destructive font-bold" : "text-muted-foreground")}>
+              <Calendar className="w-3 h-3" /> 予定: {formatDateSafe(task.dueDate)}
+            </div>
           </div>
-          <div className={cn("text-[10px] flex items-center gap-2 p-1.5 rounded", isOverdue ? "bg-destructive/5 text-destructive font-bold" : "text-muted-foreground")}>
-            <Calendar className="w-3 h-3" /> 予定: {formatDateSafe(task.dueDate)}
-          </div>
-          {task.pdfData && (
-            <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleViewPdf}>
-              <Paperclip className="w-3 h-3 mr-2" /> 添付資料を表示
-            </Button>
+
+          {pdfCount > 0 && (
+            <div className="space-y-1">
+              <p className="text-[9px] font-bold text-muted-foreground ml-1">添付資料:</p>
+              <div className="flex flex-col gap-1">
+                {task.pdfs?.map((pdf, idx) => (
+                  <Button 
+                    key={idx}
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-[10px] h-8 justify-between px-3" 
+                    onClick={() => handleViewPdf(pdf.data, pdf.name)}
+                  >
+                    <div className="flex items-center truncate mr-2">
+                      <Paperclip className="w-3 h-3 mr-2 shrink-0" />
+                      <span className="truncate">{pdf.name}</span>
+                    </div>
+                    <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+                  </Button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </CardContent>

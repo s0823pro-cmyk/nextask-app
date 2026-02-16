@@ -71,8 +71,7 @@ export default function ClientDashboard() {
       receptionDate: data.receptionDate || now.split('T')[0],
       dueDate: data.dueDate || now.split('T')[0],
       subtasks: [],
-      pdfName: data.pdfName || "",
-      pdfData: data.pdfData || "",
+      pdfs: data.pdfs || [],
       createdAt: now,
       updatedAt: now,
     }

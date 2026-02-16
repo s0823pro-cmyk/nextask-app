@@ -32,6 +32,17 @@
           "type": "string",
           "description": "The current progress status of the task (in_progress, pending, done)."
         },
+        "pdfs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "data": { "type": "string" }
+            }
+          },
+          "description": "List of attached PDF documents (up to 3)."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating when the task was first created.",

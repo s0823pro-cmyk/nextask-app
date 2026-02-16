@@ -13,6 +13,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
@@ -34,17 +36,17 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
-  const handleViewPdf = () => {
-    if (task.pdfData) {
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(
-          `<iframe width='100%' height='100%' src='${task.pdfData}'></iframe>`
-        );
-        newWindow.document.title = task.pdfName || "PDF Document";
-      }
+  const handleViewPdf = (pdfData: string, pdfName: string) => {
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(
+        `<iframe width='100%' height='100%' src='${pdfData}'></iframe>`
+      );
+      newWindow.document.title = pdfName || "PDF Document";
     }
   }
+
+  const pdfCount = task.pdfs?.length || 0
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden relative">
@@ -59,10 +61,10 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
               <StatusIcon className="w-3 h-3 mr-1" />
               {label}
             </Badge>
-            {task.pdfData && (
+            {pdfCount > 0 && (
               <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none">
                 <Paperclip className="w-2.5 h-2.5 mr-1" />
-                PDF
+                PDF {pdfCount}
               </Badge>
             )}
           </div>
@@ -76,16 +78,27 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 shadow-xl">
+          <DropdownMenuContent align="end" className="w-56 shadow-xl">
             <DropdownMenuItem onClick={() => onEdit(task)}>編集</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] text-muted-foreground">ステータス</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'in_progress')}>進行中に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'pending')}>保留に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'done')}>完了に変更</DropdownMenuItem>
-            {task.pdfData && (
-              <DropdownMenuItem onClick={handleViewPdf} className="font-semibold text-primary">
-                PDFを表示
-              </DropdownMenuItem>
+            
+            {pdfCount > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground">添付資料</DropdownMenuLabel>
+                {task.pdfs?.map((pdf, idx) => (
+                  <DropdownMenuItem key={idx} onClick={() => handleViewPdf(pdf.data, pdf.name)} className="font-semibold text-primary">
+                    <FileText className="w-3 h-3 mr-2" /> {pdf.name}
+                  </DropdownMenuItem>
+                ))}
+              </>
             )}
+            
+            <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => onDelete(task.id)}>
               削除
             </DropdownMenuItem>

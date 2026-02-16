@@ -5,7 +5,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { FileUp, FileText, X } from "lucide-react"
+import { FileUp, FileText, X, Plus } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Task } from "@/lib/types"
+import { Task, TaskPdf } from "@/lib/types"
 import { toast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
@@ -35,8 +35,10 @@ const formSchema = z.object({
   status: z.enum(["in_progress", "pending", "done"]),
   receptionDate: z.string(),
   dueDate: z.string(),
-  pdfName: z.string().optional(),
-  pdfData: z.string().optional(),
+  pdfs: z.array(z.object({
+    name: z.string(),
+    data: z.string()
+  })).max(3, { message: "PDFは最大3つまでです" }),
 })
 
 interface TaskFormProps {
@@ -56,72 +58,98 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
       status: initialTask?.status === "todo" ? "in_progress" : (initialTask?.status || "in_progress"),
       receptionDate: initialTask?.receptionDate || format(new Date(), "yyyy-MM-dd"),
       dueDate: initialTask?.dueDate || format(new Date(), "yyyy-MM-dd"),
-      pdfName: initialTask?.pdfName || "",
-      pdfData: initialTask?.pdfData || "",
+      pdfs: initialTask?.pdfs || [],
     },
   })
 
-  const pdfName = form.watch("pdfName")
+  const currentPdfs = form.watch("pdfs")
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
-    if (file.type !== "application/pdf") {
-      toast({ title: "エラー", description: "PDFファイルを選択してください。", variant: "destructive" })
+    const newPdfs: TaskPdf[] = [...currentPdfs]
+    const remainingSlots = 3 - currentPdfs.length
+
+    if (remainingSlots <= 0) {
+      toast({ title: "上限に達しました", description: "PDFは3つまでしか追加できません。", variant: "destructive" })
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result as string
-      form.setValue("pdfData", base64)
-      form.setValue("pdfName", file.name)
-      toast({ title: "PDFを選択しました", description: file.name })
+    const filesToProcess = Array.from(files).slice(0, remainingSlots)
+
+    for (const file of filesToProcess) {
+      if (file.type !== "application/pdf") {
+        toast({ title: "エラー", description: `${file.name} はPDFではありません。`, variant: "destructive" })
+        continue
+      }
+
+      const reader = new FileReader()
+      const promise = new Promise<TaskPdf>((resolve) => {
+        reader.onload = () => {
+          resolve({
+            name: file.name,
+            data: reader.result as string
+          })
+        }
+      })
+      reader.readAsDataURL(file)
+      const pdf = await promise
+      newPdfs.push(pdf)
     }
-    reader.readAsDataURL(file)
+
+    form.setValue("pdfs", newPdfs)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+    toast({ title: "PDFを追加しました" })
   }
 
-  const removePdf = () => {
-    form.setValue("pdfData", "")
-    form.setValue("pdfName", "")
-    if (fileInputRef.current) fileInputRef.current.value = ""
+  const removePdf = (index: number) => {
+    const updatedPdfs = currentPdfs.filter((_, i) => i !== index)
+    form.setValue("pdfs", updatedPdfs)
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-5 md:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <FormLabel className="text-sm font-semibold">基本情報</FormLabel>
-          <div className="w-full sm:w-auto">
-            <input
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-            />
-            {!pdfName ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <FormLabel className="text-sm font-semibold">基本情報</FormLabel>
+            {currentPdfs.length < 3 && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full sm:w-auto h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+                className="h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
               >
-                <FileUp className="mr-2 h-3 w-3" />
-                PDFファイルを選択
+                <Plus className="mr-2 h-3 w-3" />
+                PDFを追加 ({currentPdfs.length}/3)
               </Button>
-            ) : (
-              <div className="flex items-center justify-between gap-2 bg-muted p-1 px-2 rounded-md text-xs">
+            )}
+            <input
+              type="file"
+              accept=".pdf"
+              multiple
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            {currentPdfs.map((pdf, index) => (
+              <div key={index} className="flex items-center justify-between gap-2 bg-muted p-2 rounded-md text-xs">
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="h-3 w-3 text-primary shrink-0" />
-                  <span className="truncate max-w-[200px]">{pdfName}</span>
+                  <span className="truncate">{pdf.name}</span>
                 </div>
-                <button type="button" onClick={removePdf} className="text-muted-foreground hover:text-destructive p-1">
+                <button type="button" onClick={() => removePdf(index)} className="text-muted-foreground hover:text-destructive p-1">
                   <X className="h-3 w-3" />
                 </button>
               </div>
+            ))}
+            {currentPdfs.length === 0 && (
+              <p className="text-[10px] text-muted-foreground italic">添付されたPDFはありません（最大3つ）</p>
             )}
           </div>
         </div>

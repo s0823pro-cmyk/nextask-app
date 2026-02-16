@@ -1,5 +1,10 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'done';
 
+export interface TaskPdf {
+  name: string;
+  data: string;
+}
+
 export interface Task {
   id: string;
   clientId: string;
@@ -9,8 +14,7 @@ export interface Task {
   receptionDate: string;
   dueDate: string;
   subtasks: string[];
-  pdfName?: string;
-  pdfData?: string;
+  pdfs?: TaskPdf[];
   createdAt: string;
   updatedAt: string;
 }
