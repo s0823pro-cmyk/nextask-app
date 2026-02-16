@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AppLayout } from '@/components/app-layout';
 
 export const metadata: Metadata = {
-  title: 'DailyFlow | スマートなタスク管理',
+  title: 'NexTask | スマートなタスク管理',
   description: 'AI搭載の効率的なタスク管理プラットフォーム',
 };
 

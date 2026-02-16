@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -145,7 +146,7 @@ export default function ClientDashboard() {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: `DailyFlow | ${client.name} の業務フロー`,
+          title: `NexTask | ${client.name} の業務フロー`,
           text: `${client.name} 様のタスク進捗状況はこちらからご確認いただけます。`,
           url: url,
         });

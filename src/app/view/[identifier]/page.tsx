@@ -98,7 +98,7 @@ export default function PublicClientView() {
               <div className="bg-primary/10 p-2 rounded-xl">
                 <LayoutDashboard className="h-6 w-6" />
               </div>
-              <span className="font-bold text-xl md:text-2xl tracking-tight">DailyFlow Portal</span>
+              <span className="font-bold text-xl md:text-2xl tracking-tight">NexTask Portal</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tighter mt-4">業務進捗</h1>
           </div>

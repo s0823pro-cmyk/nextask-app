@@ -126,7 +126,7 @@ export function SidebarNav() {
             <div className="bg-primary p-1 rounded-lg">
               <LayoutDashboard className="h-6 w-6 text-white" />
             </div>
-            <span className="group-data-[collapsible=icon]:hidden">DailyFlow</span>
+            <span className="group-data-[collapsible=icon]:hidden">NexTask</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
