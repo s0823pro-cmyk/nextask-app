@@ -120,10 +120,36 @@ export default function ClientDashboard() {
     toast({ title: "共有URLをコピーしました" });
   }
 
-  const filteredTasks = (tasks || []).filter(t => 
-    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredTasks = (tasks || []).filter(t => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    if (!searchLower) return true;
+
+    // タイトルと説明の検索
+    const matchText = t.title.toLowerCase().includes(searchLower) || 
+                     t.description.toLowerCase().includes(searchLower);
+    
+    if (matchText) return true;
+
+    // 日付の検索 (2/17 や 2025.2.17 などの入力を 2-17, 2025-2-17 に正規化)
+    const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
+    
+    // 日付フィールド（YYYY-MM-DD）との比較
+    // 入力が「2-17」の場合、日付の「-02-17」にマッチさせるために0埋めを考慮
+    const dateParts = normalizedSearch.split('-');
+    const paddedSearch = dateParts.map(part => {
+      if (/^\d{1,2}$/.test(part)) {
+        return part.padStart(2, '0');
+      }
+      return part;
+    }).join('-');
+
+    const matchDate = t.receptionDate?.includes(paddedSearch) || 
+                     t.dueDate?.includes(paddedSearch) ||
+                     t.receptionDate?.includes(normalizedSearch) ||
+                     t.dueDate?.includes(normalizedSearch);
+
+    return matchDate;
+  })
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
   const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
@@ -170,7 +196,7 @@ export default function ClientDashboard() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="タスクを検索..." 
+            placeholder="名前、説明、または日付(2/17等)で検索..." 
             className="pl-9 bg-white border-border/50" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
