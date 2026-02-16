@@ -49,12 +49,13 @@ git push -u origin main
 1. [Firebase Console](https://console.firebase.google.com/) にアクセス。
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
 3. 作成した GitHub リポジトリを選択。
-4. **リージョンの選択**:
-   - 第1候補: **`asia-northeast1` (Tokyo)** または **`asia-northeast2` (Osaka)**
-   - 第2候補: **`asia-east1` (Taiwan)** ← 東京・大阪がない場合はこちらがおすすめ
-   - これらは日本から近く、高速に動作します。
-5. 設定はデフォルトのままで「デプロイ」を実行。
-6. 数分後、完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
+4. **設定の入力**:
+   - **ライブブランチ (Live Branch)**: `main` と入力してください。
+5. **リージョンの選択**:
+   - 第1候補: **`asia-northeast1` (Tokyo)**
+   - 第2候補: **`asia-east1` (Taiwan)** ← 東京がない場合はこちらがおすすめ
+6. 設定はデフォルトのままで「デプロイ」を実行。
+7. 数分後、完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
 
 ---
 
