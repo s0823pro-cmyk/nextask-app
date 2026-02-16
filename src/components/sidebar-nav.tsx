@@ -45,12 +45,32 @@ import { Button } from "@/components/ui/button"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 
+// 並び替えのためのカラー順序定義
+const COLOR_ORDER: Record<string, number> = {
+  "bg-blue-500": 1,
+  "bg-green-500": 2,
+  "bg-orange-500": 3,
+  "bg-red-500": 4,
+  "bg-purple-500": 5,
+  "bg-pink-500": 6,
+}
+
 export function SidebarNav() {
   const pathname = usePathname()
   const db = useFirestore()
   
   const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
-  const { data: clients = [] } = useCollection<Client>(clientsRef);
+  const { data: rawClients = [] } = useCollection<Client>(clientsRef);
+  
+  // カラー順でソートされた取引先リスト
+  const clients = React.useMemo(() => {
+    return [...(rawClients || [])].sort((a, b) => {
+      const orderA = COLOR_ORDER[a.color] || 99
+      const orderB = COLOR_ORDER[b.color] || 99
+      if (orderA !== orderB) return orderA - orderB
+      return a.name.localeCompare(b.name, "ja")
+    })
+  }, [rawClients])
   
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
@@ -131,7 +151,7 @@ export function SidebarNav() {
               <SidebarGroupLabel>取引先別タスク</SidebarGroupLabel>
             </div>
             <SidebarMenu>
-              {(clients || []).map((client) => (
+              {clients.map((client) => (
                 <SidebarMenuItem key={client.id}>
                   <SidebarMenuButton 
                     asChild 
@@ -165,9 +185,9 @@ export function SidebarNav() {
                   
                   <div className="space-y-6 py-4">
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium">取引先一覧</h4>
+                      <h4 className="text-sm font-medium">取引先一覧（カラー順）</h4>
                       <div className="space-y-2">
-                        {(clients || []).map((client) => (
+                        {clients.map((client) => (
                           <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
                             <div className="flex items-center gap-2">
                               <div className={`w-3 h-3 rounded-full ${client.color}`} />
@@ -193,7 +213,7 @@ export function SidebarNav() {
                             </div>
                           </div>
                         ))}
-                        {clients?.length === 0 && (
+                        {clients.length === 0 && (
                           <p className="text-sm text-muted-foreground">登録されている取引先はありません。</p>
                         )}
                       </div>
