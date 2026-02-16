@@ -12,6 +12,7 @@ Firebase App Hosting を利用するには、まずコードを GitHub に保存
 
 ### 2. 開発環境のターミナルで実行
 このチャット画面の**一番下にある「Terminal」タブ**をクリックして開き、以下のコマンドを一行ずつコピーして貼り付け、Enterキーを押してください。
+※ターミナルにもともとある文字は消さずに、一番下の入力欄に貼り付けていけば大丈夫です。
 
 ```bash
 # Gitの初期化
@@ -32,7 +33,7 @@ git remote add origin https://github.com/s8823pro-cmyk/nextask-app.git
 # GitHubへ送信
 git push -u origin main
 ```
-※ `git push` 時にユーザー名とパスワードを求められたら、GitHubの情報を入力してください。
+※ `git push` 時にユーザー名とパスワード（またはトークン）を求められたら、GitHubの情報を入力してください。
 
 ---
 
