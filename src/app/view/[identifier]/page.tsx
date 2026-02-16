@@ -13,6 +13,7 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Task } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
@@ -39,6 +40,9 @@ export default function PublicClientView() {
   }
 
   const tasks = tasksData || []
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
+  const pendingTasks = tasks.filter(t => t.status === 'pending')
+  const doneTasks = tasks.filter(t => t.status === 'done')
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -54,12 +58,50 @@ export default function PublicClientView() {
           <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tasks.map((task) => (
-            <PublicTaskCard key={task.id} task={task} />
-          ))}
-        </div>
-        {tasks.length === 0 && <EmptyState />}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="bg-muted/50 p-1 mb-8">
+            <TabsTrigger value="all" className="font-bold">すべて ({tasks.length})</TabsTrigger>
+            <TabsTrigger value="in_progress" className="font-bold">進行中 ({inProgressTasks.length})</TabsTrigger>
+            <TabsTrigger value="pending" className="font-bold">保留 ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="done" className="font-bold">完了 ({doneTasks.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tasks.map((task) => (
+                <PublicTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+            {tasks.length === 0 && <EmptyState />}
+          </TabsContent>
+
+          <TabsContent value="in_progress">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {inProgressTasks.map((task) => (
+                <PublicTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+            {inProgressTasks.length === 0 && <EmptyState />}
+          </TabsContent>
+
+          <TabsContent value="pending">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingTasks.map((task) => (
+                <PublicTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+            {pendingTasks.length === 0 && <EmptyState />}
+          </TabsContent>
+
+          <TabsContent value="done">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {doneTasks.map((task) => (
+                <PublicTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+            {doneTasks.length === 0 && <EmptyState />}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

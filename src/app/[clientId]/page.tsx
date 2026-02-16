@@ -66,6 +66,8 @@ export default function ClientDashboard() {
       receptionDate: data.receptionDate || now.split('T')[0],
       dueDate: data.dueDate || now.split('T')[0],
       subtasks: [],
+      pdfName: data.pdfName || "",
+      pdfData: data.pdfData || "",
       createdAt: now,
       updatedAt: now,
     }
@@ -124,6 +126,7 @@ export default function ClientDashboard() {
   )
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
+  const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
   const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
@@ -179,6 +182,7 @@ export default function ClientDashboard() {
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="all">すべて ({filteredTasks.length})</TabsTrigger>
           <TabsTrigger value="in_progress">進行中 ({inProgressTasks.length})</TabsTrigger>
+          <TabsTrigger value="pending">保留 ({pendingTasks.length})</TabsTrigger>
           <TabsTrigger value="done">完了 ({doneTasks.length})</TabsTrigger>
         </TabsList>
         
@@ -209,6 +213,15 @@ export default function ClientDashboard() {
             ))}
           </div>
         </TabsContent>
+
+        <TabsContent value="pending" className="mt-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pendingTasks.map((task) => (
+              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+            ))}
+          </div>
+        </TabsContent>
+
         <TabsContent value="done" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {doneTasks.map((task) => (
