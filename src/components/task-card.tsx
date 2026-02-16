@@ -33,6 +33,18 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
+  const handleViewPdf = () => {
+    if (task.pdfData) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(
+          `<iframe width='100%' height='100%' src='${task.pdfData}'></iframe>`
+        );
+        newWindow.document.title = task.pdfName || "PDF Document";
+      }
+    }
+  }
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden relative">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
@@ -67,6 +79,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
             <DropdownMenuItem onClick={() => onEdit(task)}>編集</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'in_progress')}>進行中に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'done')}>完了に変更</DropdownMenuItem>
+            {task.pdfData && (
+              <DropdownMenuItem onClick={handleViewPdf} className="font-semibold text-primary">
+                PDFを表示
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => onDelete(task.id)}>
               削除
             </DropdownMenuItem>

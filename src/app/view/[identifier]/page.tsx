@@ -8,7 +8,7 @@ import { format } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Task } from "@/lib/types"
@@ -68,8 +68,20 @@ function PublicTaskCard({ task }: { task: Task }) {
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
+  const handleViewPdf = () => {
+    if (task.pdfData) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(
+          `<iframe width='100%' height='100%' src='${task.pdfData}'></iframe>`
+        );
+        newWindow.document.title = task.pdfName || "PDF Document";
+      }
+    }
+  }
+
   return (
-    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative">
+    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative flex flex-col">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
         task.status === 'done' ? "bg-primary" : "bg-blue-500"
       )} />
@@ -90,12 +102,12 @@ function PublicTaskCard({ task }: { task: Task }) {
         <CardTitle className="text-xl font-bold leading-tight line-clamp-2">{task.title}</CardTitle>
       </CardHeader>
       
-      <CardContent className="p-5 pt-0 pl-7">
+      <CardContent className="p-5 pt-0 pl-7 flex-1 flex flex-col">
         <p className="text-sm text-muted-foreground line-clamp-3 mb-6 min-h-[3rem] leading-relaxed">
           {task.description || "詳細説明はありません。"}
         </p>
         
-        <div className="space-y-3">
+        <div className="space-y-3 mt-auto">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
               <FileText className="w-4 h-4 text-primary/50" />
@@ -110,6 +122,19 @@ function PublicTaskCard({ task }: { task: Task }) {
               {isOverdue && <span className="ml-auto text-[9px] font-black uppercase tracking-tighter">Overdue</span>}
             </div>
           </div>
+
+          {task.pdfData && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all font-bold"
+              onClick={handleViewPdf}
+            >
+              <Paperclip className="w-3 h-3 mr-2" />
+              添付資料(PDF)を表示
+            </Button>
+          )}
+
           <div className="text-muted-foreground/50 text-[10px] italic pt-2 border-t border-border/50">
             最終更新: {format(new Date(task.updatedAt), "yyyy/MM/dd HH:mm")}
           </div>
