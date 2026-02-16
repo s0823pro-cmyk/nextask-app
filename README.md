@@ -8,45 +8,37 @@ Firebase App Hosting を利用するには、Firebase プロジェクトを **�
 - **無料枠があります**: 小規模な利用であれば、多くの場合 **実質 0 円** で運用可能です。
 - **予算額（予算アラート）**: 支払う金額ではなく「この金額に近づいたら通知する」しきい値です。まずは **1,000円** 程度に設定するのが安心です。
 
-## 🚀 GitHub へのコード送信手順（最重要）
+## 🚀 GitHub へのコード送信手順（修正版）
 
-「Repository not found」というエラーが出る場合、登録したURLが間違っています。以下の手順でやり直してください。
+ターミナルで以下のコマンドを一行ずつ実行してください。
 
-### 1. GitHub リポジトリのURLをコピー
-- GitHub で作成したリポジトリのページを開きます。
-- 緑色の「<> Code」ボタンを押し、`https://github.com/.../nextask-app.git` というURLをコピーします。
-
-### 2. ターミナルで設定をやり直す
-画面下部の「Terminal」タブを開き、以下のコマンドを一行ずつ実行してください。
-
+### 1. 以前の設定を削除
 ```bash
-# 一度設定をリセット
 git remote remove origin
+```
 
-# 正しいURLを登録（[コピーしたURL] の部分を自分のURLに書き換えてください）
-git remote add origin [コピーしたURL]
+### 2. 正しいURL（s0823pro-cmyk様のURL）を登録
+```bash
+git remote add origin https://github.com/s0823pro-cmyk/nextask-app.git
+```
 
-# 送信を実行
+### 3. 送信を実行
+```bash
 git push -u origin main
 ```
 
 **【注意】Username/Passwordを求められたら**
-- `Username`: GitHubのユーザー名。
+- `Username`: GitHubのユーザー名（s0823pro-cmyk）。
 - `Password`: GitHubで発行した「パーソナルアクセストークン」。
-
----
-
-## 🛠 トラブルシューティング
-
-1.  **URLの貼り付け**: `[コピーしたURL]` という文字ごと貼り付けないように注意してください。`https://` で始まる自分のURLだけを貼り付けます。
-2.  **ブラウザで確認**: 自分のリポジトリページを更新して、ファイルが表示されていれば成功です。
 
 ---
 
 ## 🚀 デプロイ手順（Firebase App Hosting）
 
+GitHubにファイルが表示されたら、Firebaseコンソールで設定します。
+
 1. [Firebase Console](https://console.firebase.google.com/) > **「App Hosting」** を選択。
-2. GitHub リポジトリを選択。
+2. GitHub リポジトリ（`nextask-app`）を選択。
 3. **設定**:
    - **ライブブランチ**: `main`
    - **アプリのルートディレクトリ**: 空欄（または `/`）
