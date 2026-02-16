@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, X, Activity, Coins } from "lucide-react"
+import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,7 +83,7 @@ export default function Home() {
   }, [clients])
 
   const stats = React.useMemo(() => {
-    if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0 }
+    if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0, overdueTasks: 0 }
     
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0]
@@ -104,10 +104,17 @@ export default function Home() {
       t.status === 'awaiting_payment'
     ).length
 
+    // 期限切れ (完了・入金待ち以外で、期日が過去のもの)
+    const overdueTasksCount = tasks.filter(t => {
+      if (t.status === 'done' || t.status === 'awaiting_payment' || !t.dueDate) return false
+      return t.dueDate < todayStr
+    }).length
+
     return {
       todayTasks: todayTasksCount,
       inProgressTasks: inProgressTasksCount,
-      awaitingPaymentTasks: awaitingPaymentTasksCount
+      awaitingPaymentTasks: awaitingPaymentTasksCount,
+      overdueTasks: overdueTasksCount
     }
   }, [allTasks, mounted])
 
@@ -224,7 +231,7 @@ export default function Home() {
       </div>
 
       {!searchQuery && (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs md:text-sm font-medium">今日のタスク</CardTitle>
@@ -255,6 +262,17 @@ export default function Home() {
             <CardContent>
               <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
               <p className="text-[10px] md:text-xs text-muted-foreground">入金確認待ちタスク数</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">期限切れ</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">期日を過ぎた未完了タスク</p>
             </CardContent>
           </Card>
         </div>
