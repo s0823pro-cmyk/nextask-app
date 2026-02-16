@@ -42,7 +42,7 @@ export default function Home() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">DailyFlowへようこそ</h1>
         <p className="text-muted-foreground">
-          業務効率を最大化するタスク管理プラットフォーム。AIがあなたの作業をサポートします。
+          業務効率を最大化するタスク管理プラットフォーム。
         </p>
       </div>
 
@@ -89,63 +89,40 @@ export default function Home() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-border/50">
+      <div className="grid gap-6">
+        <Card className="border-border/50">
           <CardHeader>
             <CardTitle>取引先別ダッシュボード</CardTitle>
             <CardDescription>各取引先の専用ページでタスクを管理できます。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(clients || []).map((client) => {
-              const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
-              return (
-                <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${client.color}`} />
-                    <div>
-                      <p className="font-medium">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(clients || []).map((client) => {
+                const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
+                return (
+                  <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-3 h-3 rounded-full ${client.color}`} />
+                      <div>
+                        <p className="font-medium">{client.name}</p>
+                        <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
+                      </div>
                     </div>
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/${client.id}`}>
+                        開く <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
                   </div>
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/${client.id}`}>
-                      開く <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
             {(!clients || clients.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 <p>取引先が登録されていません。</p>
                 <p className="text-xs mt-1">サイドバーの「設定」から追加してください。</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-3 border-border/50">
-          <CardHeader>
-            <CardTitle>AIアシスタント機能</CardTitle>
-            <CardDescription>タスクの詳細はAIが提案します。</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <p className="mb-4">
-              DailyFlowは最新のAIを搭載。短いタイトルを入力するだけで、具体的な手順や必要なサブタスクを瞬時に作成します。
-            </p>
-            <ul className="space-y-2">
-              <li className="flex items-start gap-2">
-                <div className="bg-primary/10 text-primary p-1 rounded">✨</div>
-                <span>詳細説明の自動生成</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="bg-primary/10 text-primary p-1 rounded">📋</div>
-                <span>チェックリストの提案</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="bg-primary/10 text-primary p-1 rounded">📅</div>
-                <span>期日の最適化アドバイス</span>
-              </li>
-            </ul>
           </CardContent>
         </Card>
       </div>
