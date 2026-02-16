@@ -6,9 +6,15 @@ NexTaskを世界中に公開し、友人が401エラーなしで閲覧できる�
 
 Firebase App Hosting を利用するには、まずコードを GitHub に保存する必要があります。
 
-### 1. GitHub リポジトリの準備
+### 1. GitHub リポジトリの準備（重要！）
 - [GitHub](https://github.com/) にサインイン。
-- 「New repository」から新しいリポジトリ（例：`nextask-app`）を **Public** または **Private** で作成。
+- 「New repository」をクリック。
+- リポジトリ名（例：`nextask-app`）を入力。
+- **重要：以下の項目はすべてチェックを外したまま（空の状態）にしてください**
+  - [ ] Add a README file
+  - [ ] Add .gitignore
+  - [ ] Choose a license
+- 「Create repository」をクリック。
 - 作成後の画面に表示されるリポジトリの URL（`https://github.com/ユーザー名/リポジトリ名.git`）をコピー。
 
 ### 2. 開発環境のターミナルで実行
