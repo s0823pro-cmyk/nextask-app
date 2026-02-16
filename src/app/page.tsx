@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle } from "lucide-react"
+import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle, LogIn } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,13 +19,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Client, Task, TaskStatus } from "@/lib/types"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useAuth, useUser } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { TaskCard } from "@/components/task-card"
 import { toast } from "@/hooks/use-toast"
 import { saveTaskWithSync, deleteTaskWithSync } from "@/lib/task-service"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
+import { initiateGoogleSignIn } from "@/firebase/non-blocking-login"
 
 // 並び替えのためのカラー順序定義
 const COLOR_ORDER: Record<string, number> = {
@@ -39,13 +40,15 @@ const COLOR_ORDER: Record<string, number> = {
 
 export default function Home() {
   const db = useFirestore()
+  const auth = useAuth()
+  const { user, isUserLoading } = useUser()
+  
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  // ダイアログやアラートが閉じた際にポインターイベントを復帰させる共通処理
   React.useEffect(() => {
     setMounted(true)
     if (!isEditOpen && !taskToDelete) {
@@ -56,7 +59,6 @@ export default function Home() {
     }
   }, [isEditOpen, taskToDelete])
 
-  // 編集データのクリーンアップ
   React.useEffect(() => {
     if (!isEditOpen) {
       const timer = setTimeout(() => {
@@ -72,7 +74,6 @@ export default function Home() {
   const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
   const { data: allTasks = [] } = useCollection<Task>(tasksRef);
 
-  // カラー順でソートされた取引先リスト
   const sortedClients = React.useMemo(() => {
     return [...(clients || [])].sort((a, b) => {
       const orderA = COLOR_ORDER[a.color] || 99
@@ -89,22 +90,18 @@ export default function Home() {
     const todayStr = now.toISOString().split('T')[0]
     const tasks = allTasks || []
     
-    // 今日のタスク（未完了）
     const todayTasksCount = tasks.filter(t => 
       t.dueDate === todayStr && (t.status === 'todo' || t.status === 'in_progress')
     ).length
 
-    // 進行中のタスク（全体）
     const inProgressTasksCount = tasks.filter(t => 
       t.status === 'todo' || t.status === 'in_progress'
     ).length
 
-    // 入金待ち
     const awaitingPaymentTasksCount = tasks.filter(t => 
       t.status === 'awaiting_payment'
     ).length
 
-    // 期限切れ (完了・入金待ち以外で、期日が過去のもの)
     const overdueTasksCount = tasks.filter(t => {
       if (t.status === 'done' || t.status === 'awaiting_payment' || !t.dueDate) return false
       return t.dueDate < todayStr
@@ -142,12 +139,10 @@ export default function Home() {
         return part;
       }).join('-');
 
-      const matchDate = (t.receptionDate || "").includes(paddedSearch) || 
-                       (t.dueDate || "").includes(paddedSearch) ||
-                       (t.receptionDate || "").includes(normalizedSearch) ||
-                       (t.dueDate || "").includes(normalizedSearch);
-
-      return matchDate;
+      return (t.receptionDate || "").includes(paddedSearch) || 
+             (t.dueDate || "").includes(paddedSearch) ||
+             (t.receptionDate || "").includes(normalizedSearch) ||
+             (t.dueDate || "").includes(normalizedSearch);
     });
   }, [allTasks, searchQuery]);
 
@@ -169,11 +164,8 @@ export default function Home() {
     if (taskToDelete) {
       const task = allTasks?.find(t => t.id === taskToDelete);
       const client = clients?.find(c => c.id === task?.clientId);
-      
-      // 取引先情報が見つからなくても、マスターからは削除を試みる
       deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
       toast({ title: "タスクを削除しました", variant: "destructive" });
-      
       setTaskToDelete(null);
     }
   }
@@ -198,7 +190,15 @@ export default function Home() {
     toast({ title: "タスクを更新しました" });
   }
 
+  const handleGoogleSignIn = () => {
+    initiateGoogleSignIn(auth);
+  }
+
   if (!mounted) return null;
+
+  // 匿名ユーザーでもログインしていても表示しますが、
+  // 匿名ユーザーの場合はGoogleログインを促すバナーを表示することが可能です。
+  const isAnonymous = user?.isAnonymous;
 
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
@@ -209,24 +209,33 @@ export default function Home() {
             業務効率を最大化するタスク管理プラットフォーム。
           </p>
         </div>
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="タスク、日付、工事内容で検索..." 
-            className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-              onClick={() => setSearchQuery("")}
-            >
-              <X className="h-4 w-4" />
+        
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+          {isAnonymous && (
+            <Button variant="outline" size="sm" onClick={handleGoogleSignIn} className="gap-2">
+              <LogIn className="h-4 w-4" />
+              Googleアカウントでログイン
             </Button>
           )}
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="タスク、日付、工事内容で検索..." 
+              className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

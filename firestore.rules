@@ -1,5 +1,6 @@
+
 /**
- * Firestore Security Rules for DailyFlow
+ * Firestore Security Rules for NexTask
  */
 
 rules_version = '2';
@@ -17,7 +18,7 @@ service cloud.firestore {
 
     /**
      * Checks if the authenticated user has administrative privileges.
-     * For the prototype, any signed-in user is considered an admin.
+     * For the prototype, any signed-in user (including Google accounts) is an admin.
      */
     function isAdmin() {
       return isSignedIn();
@@ -46,7 +47,7 @@ service cloud.firestore {
      */
     match /clients/{clientId} {
       allow get, list: if isAdmin();
-      allow create: if isAdmin() && (request.resource.data.id == clientId || clientId != null);
+      allow create: if isAdmin();
       allow update: if isExistingAdmin();
       allow delete: if isExistingAdmin();
     }
@@ -56,13 +57,14 @@ service cloud.firestore {
      */
     match /tasks/{taskId} {
       allow get, list: if isAdmin();
-      allow create: if isAdmin() && (request.resource.data.id == taskId || taskId != null);
+      allow create: if isAdmin();
       allow update: if isExistingAdmin();
       allow delete: if isExistingAdmin();
     }
 
     /**
      * @description Rules for the client-specific denormalized task view.
+     * Access is fully public to allow viewing via shared links.
      */
     match /client_task_views/{identifier}/tasks/{taskId} {
       allow get, list: if true;
