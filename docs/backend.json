@@ -16,7 +16,7 @@
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the task, potentially augmented by AI."
+          "description": "A detailed description of the task."
         },
         "receptionDate": {
           "type": "string",
@@ -26,11 +26,11 @@
         "dueDate": {
           "type": "string",
           "description": "The date and time by which the task is expected to be completed.",
-          "format": "date-time"
+          "format": "date"
         },
         "status": {
           "type": "string",
-          "description": "The current progress status of the task (e.g., 未着手, 進行中, 完了)."
+          "description": "The current progress status of the task (in_progress, pending, done)."
         },
         "createdAt": {
           "type": "string",
@@ -44,13 +44,12 @@
         },
         "clientId": {
           "type": "string",
-          "description": "Reference to the Client entity. (Relationship: Client 1:N Task)"
+          "description": "Reference to the Client entity."
         }
       },
       "required": [
         "id",
         "title",
-        "description",
         "receptionDate",
         "dueDate",
         "status",
@@ -75,16 +74,12 @@
         },
         "dedicatedUrlIdentifier": {
           "type": "string",
-          "description": "A unique, client-friendly identifier used to generate a dedicated URL for task viewing. This should be unique across all clients."
+          "description": "A unique identifier used to generate a dedicated URL for task viewing."
         },
         "contactEmail": {
           "type": "string",
           "description": "The primary contact email address for the client.",
           "format": "email"
-        },
-        "description": {
-          "type": "string",
-          "description": "Additional descriptive notes or internal information about the client."
         },
         "createdAt": {
           "type": "string",
@@ -101,7 +96,6 @@
         "id",
         "name",
         "dedicatedUrlIdentifier",
-        "contactEmail",
         "createdAt",
         "updatedAt"
       ]
@@ -122,7 +116,7 @@
           "schema": {
             "$ref": "#/backend/entities/user"
           },
-          "description": "This collection serves as the Database Access Control (DBAC) for identifying administrative users. The existence of a document with a user's ID (`userId`) signifies that the user has administrative privileges. Used for enforcing admin-only access to /clients and /tasks."
+          "description": "Identifies administrative users."
         }
       },
       {
@@ -132,13 +126,7 @@
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores all client records, including their unique `dedicatedUrlIdentifier`. This collection is exclusively managed by administrative users.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the client."
-            }
-          ]
+          "description": "Stores client records."
         }
       },
       {
@@ -148,13 +136,7 @@
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "Main storage for all task details, managed by administrative users. Each task document includes a `clientId` field linking it to a specific client.",
-          "params": [
-            {
-              "name": "taskId",
-              "description": "The unique identifier of the task."
-            }
-          ]
+          "description": "Main storage for tasks."
         }
       },
       {
@@ -164,20 +146,9 @@
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "A denormalized, read-only view of tasks specifically for client access via a dedicated URL. The `dedicatedUrlIdentifier` is denormalized into the path to ensure authorization independence and secure `list` operations without relying on `get()` calls in security rules. Task data from `/tasks/{taskId}` is copied here, with the `dedicatedUrlIdentifier` from the associated Client document.",
-          "params": [
-            {
-              "name": "dedicatedUrlIdentifier",
-              "description": "The unique, client-friendly identifier used in the dedicated URL for accessing tasks."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier of the task."
-            }
-          ]
+          "description": "Denormalized read-only view of tasks for client access."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure for DailyFlow prioritizes Authorization Independence and Query-Aware Security Rules (QAPs) by employing both structural segregation and strategic denormalization. \n\nFor **Admin Users** and internal management, we establish `/admin_users/{userId}` as a Database Access Control (DBAC) mechanism. The mere existence of a document in this collection grants administrative privileges to the corresponding `userId`. All core `Client` and `Task` data for administrative CRUD operations are stored in top-level collections: `/clients/{clientId}` and `/tasks/{taskId}`. Security rules for these collections will simply check for the `request.auth.uid`'s presence in `/admin_users`, ensuring atomic authorization checks without any `get()` calls to other documents.\n\nFor the **Client-Specific URL View** (取引先専用のURL), which requires read-only, potentially anonymous access to tasks linked to a specific client, Authorization Independence is achieved through **denormalization**. We introduce a dedicated path: `/client_task_views/{dedicatedUrlIdentifier}/tasks/{taskId}`. \n\nHere's how Authorization Independence and QAPs are satisfied:\n\n1.  **Authorization Independence:** When an admin creates or updates a `Task`, the associated `Client`'s `dedicatedUrlIdentifier` is copied and becomes part of the path in this new collection. This means that a client trying to access `/client_task_views/{specificDedicatedUrlIdentifier}/tasks/{taskId}` will have the `dedicatedUrlIdentifier` directly available in the `path_param`. Security rules can then compare this `path_param` directly with the identifier presented in the client's request (e.g., from a URL segment or a custom token), completely eliminating the need for `get()` calls to a parent `Client` document or any other mapping collection. This ensures atomic authorization.\n\n2.  **QAPs (Query-Aware Security Rules):** The structural segregation in `/client_task_views/{dedicatedUrlIdentifier}/tasks/{taskId}` inherently scopes queries. When a client performs a `list` operation on `/client_task_views/{specificDedicatedUrlIdentifier}/tasks`, the query is automatically limited to tasks associated with that `dedicatedUrlIdentifier`. The security rule only needs to verify that the requesting client's identifier matches the `path_param`, thus ensuring that rules are not acting as filters and only authorized data is retrieved. This also exemplifies **Structural Segregation**, where data with different security postures (admin R/W vs. anonymous R) are stored in distinct collections.\n\nIn summary, the design uses dedicated collections for admin roles, central collections for internal data management, and a denormalized, structurally segregated collection to provide secure, independent, and performant access for external clients. This approach minimizes security rule complexity and maximizes debuggability."
+    ]
   }
 }

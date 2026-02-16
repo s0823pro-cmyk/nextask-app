@@ -26,6 +26,7 @@ interface TaskCardProps {
 const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-600 border-blue-200", icon: Clock },
+  pending: { label: "保留", color: "bg-orange-50 text-orange-600 border-orange-200", icon: Clock },
   done: { label: "完了", color: "bg-primary/10 text-primary border-primary/20", icon: CheckCircle2 },
 }
 
@@ -48,7 +49,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden relative">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : "bg-blue-500"
+        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-4 pb-2 space-y-0 flex flex-row items-start justify-between">
@@ -78,6 +79,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
           <DropdownMenuContent align="end" className="w-48 shadow-xl">
             <DropdownMenuItem onClick={() => onEdit(task)}>編集</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'in_progress')}>進行中に変更</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onStatusChange(task.id, 'pending')}>保留に変更</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onStatusChange(task.id, 'done')}>完了に変更</DropdownMenuItem>
             {task.pdfData && (
               <DropdownMenuItem onClick={handleViewPdf} className="font-semibold text-primary">

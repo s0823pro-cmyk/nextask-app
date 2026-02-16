@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 const statusConfig = {
   todo: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   in_progress: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
+  pending: { label: "保留", color: "bg-orange-50 text-orange-700", icon: Clock },
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
 
@@ -83,7 +84,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   return (
     <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative flex flex-col">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
-        task.status === 'done' ? "bg-primary" : "bg-blue-500"
+        task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-5 pb-2">

@@ -35,7 +35,7 @@ import { toast } from "@/hooks/use-toast"
 const formSchema = z.object({
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
   description: z.string(),
-  status: z.enum(["in_progress", "done"]),
+  status: z.enum(["in_progress", "pending", "done"]),
   receptionDate: z.string(),
   dueDate: z.string(),
   pdfName: z.string().optional(),
@@ -255,6 +255,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="in_progress">進行中</SelectItem>
+                  <SelectItem value="pending">保留</SelectItem>
                   <SelectItem value="done">完了</SelectItem>
                 </SelectContent>
               </Select>
