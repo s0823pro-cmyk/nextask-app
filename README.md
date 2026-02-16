@@ -50,8 +50,8 @@ git push -u origin main
 2. 左メニューから **「App Hosting」** を選択し、**「開始」** をクリック。
 3. 作成した GitHub リポジトリを選択。
 4. **リージョンの選択**:
-   - **`asia-northeast1` (Tokyo)** または **`asia-northeast2` (Osaka)** を選択してください。
-   - これにより、日本国内からのアクセスが最速になります。
+   - **`asia-northeast1` (Tokyo)**、**`asia-northeast2` (Osaka)**、または **`asia-east1` (Taiwan)** を選択してください。
+   - これらは日本から非常に近く、高速に動作します。
 5. 設定はデフォルトのままで「デプロイ」を実行。
 6. 数分後、完了すると `https://[プロジェクト名].web.app` という本番用URLが発行されます。
 
