@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import Link from "next/navigation"
 import { ArrowRight, Clock, Search, X, AlertTriangle, Briefcase } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -45,13 +45,20 @@ export default function Home() {
   const [mounted, setMounted] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
+  // ダイアログやアラートが閉じた際にポインターイベントを復帰させる共通処理
   React.useEffect(() => {
     setMounted(true)
-    if (!isEditOpen) {
+    if (!isEditOpen && !taskToDelete) {
       if (typeof document !== 'undefined') {
         document.body.style.pointerEvents = 'auto'
         document.body.style.overflow = 'auto'
       }
+    }
+  }, [isEditOpen, taskToDelete])
+
+  // 編集データのクリーンアップ
+  React.useEffect(() => {
+    if (!isEditOpen) {
       const timer = setTimeout(() => {
         setEditingTask(null)
       }, 300)
@@ -153,6 +160,8 @@ export default function Home() {
       if (task && client) {
         deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
         toast({ title: "タスクを削除しました", variant: "destructive" });
+      } else {
+        console.error("Task or client not found for deletion", { taskToDelete, task, client });
       }
       setTaskToDelete(null);
     }

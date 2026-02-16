@@ -44,14 +44,19 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  // ダイアログが完全に閉じてからデータをクリアするためのEffect
+  // ダイアログやアラートが閉じた際にポインターイベントを復帰させる共通処理
   React.useEffect(() => {
-    if (!isEditOpen) {
+    if (!isEditOpen && !taskToDelete) {
       if (typeof document !== 'undefined') {
         document.body.style.pointerEvents = 'auto'
         document.body.style.overflow = 'auto'
       }
-      
+    }
+  }, [isEditOpen, taskToDelete])
+
+  // 編集データのクリーンアップ
+  React.useEffect(() => {
+    if (!isEditOpen) {
       const timer = setTimeout(() => {
         setEditingTask(null)
       }, 300)
@@ -116,6 +121,9 @@ export default function ClientDashboard() {
       deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
       toast({ title: "タスクを削除しました", variant: "destructive" });
       setTaskToDelete(null);
+    } else if (taskToDelete) {
+      // client情報がまだない場合などのフォールバック
+      setTaskToDelete(null);
     }
   }
 
@@ -145,7 +153,6 @@ export default function ClientDashboard() {
           url: url,
         });
       } catch (err) {
-        // ユーザーキャンセル以外の場合にコピー処理にフォールバック
         if ((err as Error).name !== 'AbortError') {
           navigator.clipboard.writeText(url);
           setCopied(true);
