@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -38,7 +39,6 @@ export function SidebarNav() {
   const pathname = usePathname()
   const db = useFirestore()
   
-  // 取引先一覧の参照をメモ化
   const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
   const { data: clients = [] } = useCollection<Client>(clientsRef);
   
@@ -52,15 +52,15 @@ export function SidebarNav() {
         name: data.name,
         color: data.color,
       }
+      setEditingClient(null)
       saveClientFirestore(db, updatedClient)
       toast({ title: "取引先を更新しました" })
-      setEditingClient(null)
     } else {
       const newClient: Client = {
         id: generateId(),
         name: data.name,
         color: data.color,
-        dedicatedUrlIdentifier: Math.random().toString(36).substr(2, 12), // Unguessable link identifier
+        dedicatedUrlIdentifier: Math.random().toString(36).substr(2, 12),
       }
       saveClientFirestore(db, newClient)
       toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })

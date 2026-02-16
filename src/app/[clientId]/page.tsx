@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -29,6 +30,7 @@ export default function ClientDashboard() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
+  const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
 
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
@@ -41,6 +43,10 @@ export default function ClientDashboard() {
 
   const handleCreateTask = (data: Partial<Task>) => {
     if (!client) return;
+    
+    // UIを先に閉じる
+    setIsCreateOpen(false);
+    
     const now = new Date().toISOString();
     const newTask: Task = {
       id: generateId(),
@@ -54,18 +60,25 @@ export default function ClientDashboard() {
       createdAt: now,
       updatedAt: now,
     }
+    
+    // 非ブロッキングで保存
     saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
-    setIsCreateOpen(false);
     toast({ title: "タスクを作成しました" });
   }
 
   const handleUpdateTask = (data: Partial<Task>) => {
     if (!editingTask || !client) return;
+    
+    // UIを先に閉じる
+    setIsEditOpen(false);
+    
     const updatedTask: Task = { 
       ...editingTask, 
       ...data, 
       updatedAt: new Date().toISOString() 
     }
+    
+    // 非ブロッキングで保存
     saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
     setEditingTask(null);
     toast({ title: "タスクを更新しました" });
@@ -84,6 +97,11 @@ export default function ClientDashboard() {
       saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
       toast({ title: "ステータスを更新しました" });
     }
+  }
+
+  const handleEditClick = (task: Task) => {
+    setEditingTask(task);
+    setIsEditOpen(true);
   }
 
   const copyShareLink = () => {
@@ -167,7 +185,7 @@ export default function ClientDashboard() {
               <TaskCard 
                 key={task.id} 
                 task={task} 
-                onEdit={setEditingTask}
+                onEdit={handleEditClick}
                 onDelete={handleDeleteTask}
                 onStatusChange={handleStatusChange}
               />
@@ -184,27 +202,30 @@ export default function ClientDashboard() {
         <TabsContent value="todo" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {todoTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="in_progress" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {inProgressTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="done" className="mt-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {doneTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open)
+        if (!open) setEditingTask(null)
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>タスクを編集</DialogTitle>
@@ -213,7 +234,7 @@ export default function ClientDashboard() {
             <TaskForm 
               initialTask={editingTask} 
               onSubmit={handleUpdateTask} 
-              onCancel={() => setEditingTask(null)} 
+              onCancel={() => setIsEditOpen(false)} 
             />
           )}
         </DialogContent>
