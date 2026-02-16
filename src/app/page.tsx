@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, CheckCircle, Clock, Layout, Users, Search, X, AlertTriangle, Briefcase } from "lucide-react"
+import { ArrowRight, Clock, Search, X, AlertTriangle, Briefcase } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,22 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
+
+  // ダイアログが完全に閉じてからデータをクリアするためのEffect
+  React.useEffect(() => {
+    if (!isEditOpen) {
+      // Radix UIのダイアログが閉じるときにbodyのロックが解除されない問題への強力な対策
+      if (typeof document !== 'undefined') {
+        document.body.style.pointerEvents = 'auto'
+        document.body.style.overflow = 'auto'
+      }
+      
+      const timer = setTimeout(() => {
+        setEditingTask(null)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isEditOpen])
 
   // 取引先一覧の取得
   const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
@@ -54,13 +70,11 @@ export default function Home() {
     if (!searchLower) return [];
 
     return (allTasks || []).filter(t => {
-      // タイトルと説明の検索
       const matchText = t.title.toLowerCase().includes(searchLower) || 
                        t.description.toLowerCase().includes(searchLower);
       
       if (matchText) return true;
 
-      // 日付の検索
       const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
       const dateParts = normalizedSearch.split('-');
       const paddedSearch = dateParts.map(part => {

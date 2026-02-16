@@ -36,6 +36,12 @@ export default function ClientDashboard() {
   // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
     if (!isEditOpen) {
+      // Radix UIのダイアログが閉じるときにbodyのロックが解除されない問題への強力な対策
+      if (typeof document !== 'undefined') {
+        document.body.style.pointerEvents = 'auto'
+        document.body.style.overflow = 'auto'
+      }
+      
       const timer = setTimeout(() => {
         setEditingTask(null)
       }, 300)
@@ -124,17 +130,12 @@ export default function ClientDashboard() {
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return true;
 
-    // タイトルと説明の検索
     const matchText = t.title.toLowerCase().includes(searchLower) || 
                      t.description.toLowerCase().includes(searchLower);
     
     if (matchText) return true;
 
-    // 日付の検索 (2/17 や 2025.2.17 などの入力を 2-17, 2025-2-17 に正規化)
     const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
-    
-    // 日付フィールド（YYYY-MM-DD）との比較
-    // 入力が「2-17」の場合、日付の「-02-17」にマッチさせるために0埋めを考慮
     const dateParts = normalizedSearch.split('-');
     const paddedSearch = dateParts.map(part => {
       if (/^\d{1,2}$/.test(part)) {
