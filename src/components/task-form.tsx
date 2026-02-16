@@ -93,10 +93,10 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-6">
-        <div className="flex items-center justify-between">
+      <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-5 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <FormLabel className="text-sm font-semibold">基本情報</FormLabel>
-          <div>
+          <div className="w-full sm:w-auto">
             <input
               type="file"
               accept=".pdf"
@@ -110,16 +110,18 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+                className="w-full sm:w-auto h-8 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
               >
                 <FileUp className="mr-2 h-3 w-3" />
                 PDFファイルを選択
               </Button>
             ) : (
-              <div className="flex items-center gap-2 bg-muted p-1 px-2 rounded-md text-xs">
-                <FileText className="h-3 w-3 text-primary" />
-                <span className="max-w-[150px] truncate">{pdfName}</span>
-                <button type="button" onClick={removePdf} className="text-muted-foreground hover:text-destructive">
+              <div className="flex items-center justify-between gap-2 bg-muted p-1 px-2 rounded-md text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-3 w-3 text-primary shrink-0" />
+                  <span className="truncate max-w-[200px]">{pdfName}</span>
+                </div>
+                <button type="button" onClick={removePdf} className="text-muted-foreground hover:text-destructive p-1">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -134,7 +136,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             <FormItem>
               <FormLabel className="text-sm font-semibold">タスク名</FormLabel>
               <FormControl>
-                <Input placeholder="例: 月次報告書の作成" {...field} />
+                <Input placeholder="例: 月次報告書の作成" {...field} className="text-sm" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -150,7 +152,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
               <FormControl>
                 <Textarea 
                   placeholder="タスクの詳細を入力してください..." 
-                  className="min-h-[120px] resize-none border-muted-foreground/20 focus:border-primary" 
+                  className="min-h-[100px] md:min-h-[120px] resize-none border-muted-foreground/20 focus:border-primary text-sm" 
                   {...field} 
                 />
               </FormControl>
@@ -159,20 +161,20 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <FormField
             control={form.control}
             name="receptionDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-2 text-sm font-semibold">受付日</FormLabel>
+                <FormLabel className="mb-1 text-sm font-semibold">受付日</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors",
+                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors text-sm",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -205,14 +207,14 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             name="dueDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-2 text-sm font-semibold">期日</FormLabel>
+                <FormLabel className="mb-1 text-sm font-semibold">期日</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors",
+                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors text-sm",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -249,7 +251,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
               <FormLabel className="text-sm font-semibold">ステータス</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="border-muted-foreground/20">
+                  <SelectTrigger className="border-muted-foreground/20 text-sm">
                     <SelectValue placeholder="ステータスを選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -264,11 +266,11 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           )}
         />
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="ghost" onClick={onCancel} className="px-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 md:gap-3 pt-4">
+          <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto px-6">
             キャンセル
           </Button>
-          <Button type="submit" className="px-8 font-semibold shadow-md transition-all active:scale-95">
+          <Button type="submit" className="w-full sm:w-auto px-8 font-semibold shadow-md transition-all active:scale-95">
             保存する
           </Button>
         </div>

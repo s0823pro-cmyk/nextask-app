@@ -36,7 +36,6 @@ export default function ClientDashboard() {
   // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
     if (!isEditOpen) {
-      // Radix UIのダイアログが閉じるときにbodyのロックが解除されない問題への強力な対策
       if (typeof document !== 'undefined') {
         document.body.style.pointerEvents = 'auto'
         document.body.style.overflow = 'auto'
@@ -117,13 +116,32 @@ export default function ClientDashboard() {
     setIsEditOpen(true);
   }
 
-  const copyShareLink = () => {
+  const copyShareLink = async () => {
     if (!client) return;
     const url = `${window.location.origin}/view/${client.dedicatedUrlIdentifier}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "共有URLをコピーしました" });
+    
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `DailyFlow | ${client.name} の業務フロー`,
+          text: `${client.name} 様のタスク進捗状況はこちらからご確認いただけます。`,
+          url: url,
+        });
+      } catch (err) {
+        // ユーザーキャンセル以外の場合にコピー処理にフォールバック
+        if ((err as Error).name !== 'AbortError') {
+          navigator.clipboard.writeText(url);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          toast({ title: "共有URLをコピーしました" });
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "共有URLをコピーしました" });
+    }
   }
 
   const filteredTasks = (tasks || []).filter(t => {
@@ -157,30 +175,31 @@ export default function ClientDashboard() {
   const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className={`w-3 h-3 rounded-full ${client?.color || 'bg-gray-400'}`} />
-            <span className="text-sm font-medium text-muted-foreground">取引先</span>
+            <span className="text-xs md:text-sm font-medium text-muted-foreground">取引先</span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             {client?.name || '読み込み中...'} の業務フロー
           </h2>
-          <p className="text-muted-foreground">タスクの進捗をリアルタイムで管理・更新します。</p>
+          <p className="text-xs md:text-sm text-muted-foreground">タスクの進捗をリアルタイムで管理・更新します。</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10">
+          <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10 flex-1 md:flex-none">
             {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Share2 className="mr-2 h-4 w-4" />}
-            共有URLをコピー
+            共有URLを
+            <span className="hidden sm:inline">コピー</span>
           </Button>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="h-10 bg-primary hover:bg-primary/90">
+              <Button className="h-10 bg-primary hover:bg-primary/90 flex-1 md:flex-none">
                 <Plus className="mr-2 h-4 w-4" /> 新規タスク
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
               <DialogHeader>
                 <DialogTitle>新しいタスクを作成</DialogTitle>
               </DialogHeader>
@@ -197,8 +216,8 @@ export default function ClientDashboard() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="名前、説明、または日付(2/17等)で検索..." 
-            className="pl-9 bg-white border-border/50" 
+            placeholder="名前、説明、日付で検索..." 
+            className="pl-9 bg-white border-border/50 text-sm" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -206,15 +225,17 @@ export default function ClientDashboard() {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="all">すべて ({filteredTasks.length})</TabsTrigger>
-          <TabsTrigger value="in_progress">進行中 ({inProgressTasks.length})</TabsTrigger>
-          <TabsTrigger value="pending">保留 ({pendingTasks.length})</TabsTrigger>
-          <TabsTrigger value="done">完了 ({doneTasks.length})</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="bg-muted/50 p-1 w-full justify-start md:justify-center">
+            <TabsTrigger value="all" className="flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
+            <TabsTrigger value="in_progress" className="flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>
+            <TabsTrigger value="pending" className="flex-1 min-w-[80px]">保留 ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="done" className="flex-1 min-w-[80px]">完了 ({doneTasks.length})</TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredTasks.map((task) => (
               <TaskCard 
                 key={task.id} 
@@ -226,7 +247,7 @@ export default function ClientDashboard() {
             ))}
           </div>
           {!isLoading && filteredTasks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
               <Plus className="h-12 w-12 mb-4 opacity-20" />
               <p>タスクが見つかりませんでした。</p>
             </div>
@@ -234,7 +255,7 @@ export default function ClientDashboard() {
         </TabsContent>
         
         <TabsContent value="in_progress" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {inProgressTasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
@@ -242,7 +263,7 @@ export default function ClientDashboard() {
         </TabsContent>
 
         <TabsContent value="pending" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {pendingTasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
@@ -250,7 +271,7 @@ export default function ClientDashboard() {
         </TabsContent>
 
         <TabsContent value="done" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {doneTasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
@@ -259,7 +280,7 @@ export default function ClientDashboard() {
       </Tabs>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
           <DialogHeader>
             <DialogTitle>タスクを編集</DialogTitle>
           </DialogHeader>

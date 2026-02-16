@@ -91,17 +91,17 @@ export default function PublicClientView() {
               <div className="bg-primary/10 p-2 rounded-xl">
                 <LayoutDashboard className="h-6 w-6" />
               </div>
-              <span className="font-bold text-2xl tracking-tight">DailyFlow Portal</span>
+              <span className="font-bold text-xl md:text-2xl tracking-tight">DailyFlow Portal</span>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter mt-4">業務進捗ダッシュボード</h1>
-            <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter mt-4">業務進捗ダッシュボード</h1>
+            <p className="text-muted-foreground text-sm md:text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
           </div>
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="キーワード・日付で検索..." 
-              className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary" 
+              className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -109,15 +109,17 @@ export default function PublicClientView() {
         </div>
 
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="bg-muted/50 p-1 mb-8">
-            <TabsTrigger value="all" className="font-bold">すべて ({filteredTasks.length})</TabsTrigger>
-            <TabsTrigger value="in_progress" className="font-bold">進行中 ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="pending" className="font-bold">保留 ({pendingTasks.length})</TabsTrigger>
-            <TabsTrigger value="done" className="font-bold">完了 ({doneTasks.length})</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="bg-muted/50 p-1 mb-6 md:mb-8 w-full justify-start md:justify-center">
+              <TabsTrigger value="all" className="font-bold flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
+              <TabsTrigger value="in_progress" className="font-bold flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>
+              <TabsTrigger value="pending" className="font-bold flex-1 min-w-[80px]">保留 ({pendingTasks.length})</TabsTrigger>
+              <TabsTrigger value="done" className="font-bold flex-1 min-w-[80px]">完了 ({doneTasks.length})</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="all">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="all" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredTasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
               ))}
@@ -125,8 +127,8 @@ export default function PublicClientView() {
             {filteredTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
-          <TabsContent value="in_progress">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="in_progress" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {inProgressTasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
               ))}
@@ -134,8 +136,8 @@ export default function PublicClientView() {
             {inProgressTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
-          <TabsContent value="pending">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="pending" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {pendingTasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
               ))}
@@ -143,8 +145,8 @@ export default function PublicClientView() {
             {pendingTasks.length === 0 && <EmptyState isSearching={!!searchQuery} />}
           </TabsContent>
 
-          <TabsContent value="done">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="done" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {doneTasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
               ))}
@@ -174,53 +176,53 @@ function PublicTaskCard({ task }: { task: Task }) {
   }
 
   return (
-    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative flex flex-col">
+    <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative flex flex-col group active:scale-[0.99] md:active:scale-100">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
         task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : "bg-blue-500"
       )} />
       
-      <CardHeader className="p-5 pb-2">
+      <CardHeader className="p-4 md:p-5 pb-2">
         <div className="flex items-center gap-2 mb-3">
-          <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5 text-[10px] uppercase tracking-wider", color)}>
-            <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
+          <Badge variant="outline" className={cn("font-bold px-2.5 py-0.5 text-[9px] md:text-[10px] uppercase tracking-wider", color)}>
+            <StatusIcon className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />
             {label}
           </Badge>
           {task.pdfData && (
-            <Badge variant="secondary" className="px-2.5 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none">
-              <Paperclip className="w-3 h-3 mr-1" />
+            <Badge variant="secondary" className="px-2.5 py-0.5 text-[9px] md:text-[10px] font-bold bg-muted text-muted-foreground border-none">
+              <Paperclip className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1" />
               資料あり
             </Badge>
           )}
         </div>
-        <CardTitle className="text-xl font-bold leading-tight line-clamp-2">{task.title}</CardTitle>
+        <CardTitle className="text-lg md:text-xl font-bold leading-tight line-clamp-2">{task.title}</CardTitle>
       </CardHeader>
       
-      <CardContent className="p-5 pt-0 pl-7 flex-1 flex flex-col">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-2">
+      <CardContent className="p-4 md:p-5 pt-0 pl-6 md:pl-7 flex-1 flex flex-col">
+        <div className="mb-4 md:mb-6">
+          <p className="text-xs md:text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-2">
             {task.description || "詳細説明はありません。"}
           </p>
           <Dialog>
             <DialogTrigger asChild>
-              <button className="text-primary text-xs font-bold flex items-center gap-1 hover:underline">
+              <button className="text-primary text-[11px] md:text-xs font-bold flex items-center gap-1 hover:underline">
                 <Eye className="w-3 h-3" /> 全文を確認する
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+            <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl max-h-[85vh] flex flex-col">
               <DialogHeader>
-                <DialogTitle>{task.title}</DialogTitle>
+                <DialogTitle className="text-lg md:text-xl">{task.title}</DialogTitle>
               </DialogHeader>
-              <ScrollArea className="flex-1 mt-4 p-4 border rounded-md">
+              <ScrollArea className="flex-1 mt-4 p-3 md:p-4 border rounded-md">
                 <div className="text-sm leading-relaxed whitespace-pre-wrap">
                   {task.description || "詳細説明はありません。"}
                 </div>
               </ScrollArea>
               <div className="mt-4 flex flex-col gap-2 border-t pt-4">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
                   <FileText className="w-3 h-3" />
                   <span>受付日: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy年MM月dd日") : "-"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
                   <Calendar className="w-3 h-3" />
                   <span>完了予定: {format(new Date(task.dueDate), "yyyy年MM月dd日")}</span>
                 </div>
@@ -231,17 +233,17 @@ function PublicTaskCard({ task }: { task: Task }) {
         
         <div className="space-y-3 mt-auto">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-              <FileText className="w-4 h-4 text-primary/50" />
+            <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-semibold text-muted-foreground">
+              <FileText className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary/50" />
               <span>受付日: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy年MM月dd日") : "-"}</span>
             </div>
             <div className={cn(
-              "flex items-center gap-2 text-[11px] font-semibold p-2 rounded-lg",
+              "flex items-center gap-2 text-[10px] md:text-[11px] font-semibold p-2 rounded-lg",
               isOverdue ? "bg-destructive/5 text-destructive" : "bg-muted/50 text-muted-foreground"
             )}>
-              <Calendar className="w-4 h-4 text-primary/50" />
+              <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary/50" />
               <span>完了予定: {format(new Date(task.dueDate), "yyyy年MM月dd日")}</span>
-              {isOverdue && <span className="ml-auto text-[9px] font-black uppercase tracking-tighter">Overdue</span>}
+              {isOverdue && <span className="ml-auto text-[8px] md:text-[9px] font-black uppercase tracking-tighter">Overdue</span>}
             </div>
           </div>
 
@@ -249,7 +251,7 @@ function PublicTaskCard({ task }: { task: Task }) {
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full mt-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all font-bold"
+              className="w-full mt-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all font-bold h-9 md:h-10 text-xs md:text-sm"
               onClick={handleViewPdf}
             >
               <Paperclip className="w-3 h-3 mr-2" />
@@ -257,7 +259,7 @@ function PublicTaskCard({ task }: { task: Task }) {
             </Button>
           )}
 
-          <div className="text-muted-foreground/50 text-[10px] italic pt-2 border-t border-border/50">
+          <div className="text-muted-foreground/40 text-[9px] md:text-[10px] italic pt-2 border-t border-border/50">
             最終更新: {format(new Date(task.updatedAt), "yyyy/MM/dd HH:mm")}
           </div>
         </div>
@@ -268,15 +270,15 @@ function PublicTaskCard({ task }: { task: Task }) {
 
 function EmptyState({ isSearching }: { isSearching: boolean }) {
   return (
-    <div className="text-center py-32 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
-      <div className="bg-background w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+    <div className="text-center py-24 md:py-32 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50 px-4">
+      <div className="bg-background w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
         {isSearching ? (
-          <Search className="w-8 h-8 text-muted-foreground opacity-20" />
+          <Search className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground opacity-20" />
         ) : (
-          <Clock className="w-8 h-8 text-muted-foreground opacity-20" />
+          <Clock className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground opacity-20" />
         )}
       </div>
-      <p className="text-muted-foreground font-medium">
+      <p className="text-muted-foreground font-medium text-sm md:text-base">
         {isSearching ? "一致するタスクが見つかりませんでした。" : "現在、表示できるタスクはありません。"}
       </p>
     </div>

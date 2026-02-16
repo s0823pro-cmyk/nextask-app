@@ -26,7 +26,6 @@ export default function Home() {
   // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
     if (!isEditOpen) {
-      // Radix UIのダイアログが閉じるときにbodyのロックが解除されない問題への強力な対策
       if (typeof document !== 'undefined') {
         document.body.style.pointerEvents = 'auto'
         document.body.style.overflow = 'auto'
@@ -133,19 +132,19 @@ export default function Home() {
   }
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6">
+    <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">DailyFlowへようこそ</h1>
-          <p className="text-muted-foreground">
+        <div className="flex flex-col gap-1 md:gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">DailyFlowへようこそ</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">
             業務効率を最大化するタスク管理プラットフォーム。
           </p>
         </div>
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="全プロジェクトからタスクを検索 (名前、日付など)..." 
-            className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary" 
+            placeholder="案件横断でタスクを検索 (2/17等)..." 
+            className="pl-9 h-11 bg-white border-border/50 shadow-sm focus:ring-primary text-sm" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -163,37 +162,37 @@ export default function Home() {
       </div>
 
       {!searchQuery && (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">今日のタスク</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">今日のタスク</CardTitle>
               <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.todayTasks}</div>
-              <p className="text-xs text-muted-foreground">全案件の今日の未完了数</p>
+              <div className="text-xl md:text-2xl font-bold">{stats.todayTasks}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">今日の未完了数</p>
             </CardContent>
           </Card>
           
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">期限切れ</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">期限切れ</CardTitle>
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
-              <p className="text-xs text-muted-foreground">期日を過ぎた未完了タスク</p>
+              <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">期日超過の未完了</p>
             </CardContent>
           </Card>
 
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">登録取引先数</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">登録取引先</CardTitle>
               <Briefcase className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalClients}</div>
-              <p className="text-xs text-muted-foreground">現在管理している取引先の総数</p>
+              <div className="text-xl md:text-2xl font-bold">{stats.totalClients}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">管理中の取引先総数</p>
             </CardContent>
           </Card>
         </div>
@@ -202,17 +201,17 @@ export default function Home() {
       <div className="grid gap-6">
         {searchQuery ? (
           <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                 <Search className="h-5 w-5 text-primary" />
                 検索結果: {filteredTasks.length}件
               </CardTitle>
-              <CardDescription>
-                すべての取引先から「{searchQuery}」に一致するタスクを表示しています。
+              <CardDescription className="text-xs md:text-sm">
+                「{searchQuery}」に一致するタスクを表示しています。
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <CardContent className="p-4 md:p-6 pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {filteredTasks.map((task) => (
                   <TaskCard 
                     key={task.id} 
@@ -233,36 +232,36 @@ export default function Home() {
           </Card>
         ) : (
           <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle>取引先別ダッシュボード</CardTitle>
-              <CardDescription>各取引先の専用ページでタスクを管理できます。</CardDescription>
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="text-lg md:text-xl">取引先別ダッシュボード</CardTitle>
+              <CardDescription className="text-xs md:text-sm">各取引先の専用ページでタスクを管理できます。</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="p-4 md:p-6 pt-0 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 {(clients || []).map((client) => {
                   const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
                   return (
-                    <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <Link 
+                      key={client.id} 
+                      href={`/${client.id}`}
+                      className="flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors active:scale-[0.98]"
+                    >
                       <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full ${client.color}`} />
                         <div>
-                          <p className="font-medium">{client.name}</p>
+                          <p className="font-bold text-sm md:text-base">{client.name}</p>
                           <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
                         </div>
                       </div>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/${client.id}`}>
-                          開く <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </Link>
                   )
                 })}
               </div>
               {(!clients || clients.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>取引先が登録されていません。</p>
-                  <p className="text-xs mt-1">サイドバーの「設定」から追加してください。</p>
+                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                  <p className="text-sm">取引先が登録されていません。</p>
+                  <p className="text-[10px] mt-2">サイドバーの「設定」から追加してください。</p>
                 </div>
               )}
             </CardContent>
@@ -271,7 +270,7 @@ export default function Home() {
       </div>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
           <DialogHeader>
             <DialogTitle>タスクを編集</DialogTitle>
           </DialogHeader>
