@@ -1,6 +1,14 @@
-import { Task, TaskStatus } from './types';
+import { Task, TaskStatus, Client } from './types';
 
 const STORAGE_KEY = 'dailyflow_tasks';
+const CLIENTS_STORAGE_KEY = 'dailyflow_clients';
+
+// Default clients if none exist
+const DEFAULT_CLIENTS: Client[] = [
+  { id: "acme-inc", name: "株式会社アクメ", color: "bg-blue-500" },
+  { id: "global-corp", name: "グローバル合同会社", color: "bg-green-500" },
+  { id: "future-tech", name: "フューチャー・テック", color: "bg-purple-500" },
+];
 
 export const getTasks = (clientId: string): Task[] => {
   if (typeof window === 'undefined') return [];
@@ -41,4 +49,31 @@ export const updateTaskStatus = (taskId: string, status: TaskStatus) => {
     allTasks[index].status = status;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allTasks));
   }
+};
+
+// Client Management
+export const getClients = (): Client[] => {
+  if (typeof window === 'undefined') return DEFAULT_CLIENTS;
+  const stored = localStorage.getItem(CLIENTS_STORAGE_KEY);
+  if (!stored) {
+    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(DEFAULT_CLIENTS));
+    return DEFAULT_CLIENTS;
+  }
+  return JSON.parse(stored);
+};
+
+export const saveClient = (client: Client) => {
+  const clients = getClients();
+  const index = clients.findIndex(c => c.id === client.id);
+  if (index >= 0) {
+    clients[index] = client;
+  } else {
+    clients.push(client);
+  }
+  localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
+};
+
+export const deleteClient = (clientId: string) => {
+  const clients = getClients().filter(c => c.id !== clientId);
+  localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
 };

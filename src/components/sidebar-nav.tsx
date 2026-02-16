@@ -1,8 +1,10 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, Users, Settings, Plus, Home } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 import {
   Sidebar,
@@ -17,21 +19,37 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-
-const mainNav = [
-  { title: "ダッシュボード", icon: LayoutDashboard, url: "/" },
-  { title: "取引先一覧", icon: Users, url: "/clients" },
-]
-
-// Sample clients that could be fetched from a database
-const clients = [
-  { id: "acme-inc", name: "株式会社アクメ", color: "bg-blue-500" },
-  { id: "global-corp", name: "グローバル合同会社", color: "bg-green-500" },
-  { id: "future-tech", name: "フューチャー・テック", color: "bg-purple-500" },
-]
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Client } from "@/lib/types"
+import { getClients, saveClient } from "@/lib/task-service"
+import { ClientForm } from "@/components/client-form"
 
 export function SidebarNav() {
   const pathname = usePathname()
+  const [clients, setClients] = React.useState<Client[]>([])
+  const [isClientDialogOpen, setIsClientDialogOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    setClients(getClients())
+  }, [])
+
+  const handleAddClient = (data: { name: string; color: string }) => {
+    const newClient: Client = {
+      id: data.name.toLowerCase().replace(/\s+/g, '-'),
+      name: data.name,
+      color: data.color,
+    }
+    saveClient(newClient)
+    setClients(getClients())
+    setIsClientDialogOpen(false)
+    toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -61,7 +79,9 @@ export function SidebarNav() {
         <SidebarSeparator className="mx-2" />
         
         <SidebarGroup>
-          <SidebarGroupLabel>取引先別タスク</SidebarGroupLabel>
+          <div className="flex items-center justify-between pr-2">
+            <SidebarGroupLabel>取引先別タスク</SidebarGroupLabel>
+          </div>
           <SidebarMenu>
             {clients.map((client) => (
               <SidebarMenuItem key={client.id}>
@@ -83,10 +103,23 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Settings className="h-4 w-4" />
-              <span>設定</span>
-            </SidebarMenuButton>
+            <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+              <DialogTrigger asChild>
+                <SidebarMenuButton tooltip="取引先の追加・管理">
+                  <Settings className="h-4 w-4" />
+                  <span>取引先の追加</span>
+                </SidebarMenuButton>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>新規取引先の追加</DialogTitle>
+                </DialogHeader>
+                <ClientForm 
+                  onSubmit={handleAddClient}
+                  onCancel={() => setIsClientDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -14,28 +14,24 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog"
-import { Task, TaskStatus } from "@/lib/types"
-import { getTasks, saveTask, deleteTask, updateTaskStatus } from "@/lib/task-service"
+import { Task, TaskStatus, Client } from "@/lib/types"
+import { getTasks, saveTask, deleteTask, updateTaskStatus, getClients } from "@/lib/task-service"
 import { TaskCard } from "@/components/task-card"
 import { TaskForm } from "@/components/task-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const clientMap: Record<string, string> = {
-  "acme-inc": "株式会社アクメ",
-  "global-corp": "グローバル合同会社",
-  "future-tech": "フューチャー・テック",
-}
-
 export default function ClientDashboard() {
   const { clientId } = useParams<{ clientId: string }>()
   const [tasks, setTasks] = React.useState<Task[]>([])
+  const [client, setClient] = React.useState<Client | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
 
-  const clientName = clientMap[clientId] || clientId
-
   React.useEffect(() => {
+    const clients = getClients()
+    const currentClient = clients.find(c => c.id === clientId)
+    setClient(currentClient || { id: clientId, name: clientId, color: "bg-gray-500" })
     loadTasks()
   }, [clientId])
 
@@ -94,7 +90,11 @@ export default function ClientDashboard() {
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">{clientName} の業務フロー</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <div className={`w-3 h-3 rounded-full ${client?.color}`} />
+            <span className="text-sm font-medium text-muted-foreground">取引先</span>
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">{client?.name} の業務フロー</h2>
           <p className="text-muted-foreground">タスクの進捗をリアルタイムで管理・更新します。</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
