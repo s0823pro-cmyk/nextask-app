@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils"
 
 const statusConfig = {
   todo: { label: "未着手", color: "bg-muted text-muted-foreground", icon: Circle },
-  in_progress: { label: "進行中", color: "bg-blue-100 text-blue-700", icon: Clock },
+  in_progress: { label: "進行中", color: "bg-blue-50 text-blue-700", icon: Clock },
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
 
@@ -46,22 +47,24 @@ export default function PublicClientView() {
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-primary">
-            <LayoutDashboard className="h-6 w-6" />
-            <span className="font-bold text-xl">DailyFlow Portal</span>
+            <div className="bg-primary/10 p-2 rounded-xl">
+              <LayoutDashboard className="h-6 w-6" />
+            </div>
+            <span className="font-bold text-2xl tracking-tight">DailyFlow Portal</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">業務進捗ダッシュボード</h1>
-          <p className="text-muted-foreground">リアルタイムの作業進捗をご確認いただけます。</p>
+          <h1 className="text-4xl font-black tracking-tighter mt-4">業務進捗ダッシュボード</h1>
+          <p className="text-muted-foreground text-lg">リアルタイムの作業進捗をいつでもご確認いただけます。</p>
         </div>
 
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="all">すべて ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="todo">未着手 ({todoTasks.length})</TabsTrigger>
-            <TabsTrigger value="in_progress">進行中 ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="done">完了 ({doneTasks.length})</TabsTrigger>
+          <TabsList className="bg-muted/50 p-1 mb-6">
+            <TabsTrigger value="all" className="px-6">すべて ({tasks.length})</TabsTrigger>
+            <TabsTrigger value="todo" className="px-6">未着手 ({todoTasks.length})</TabsTrigger>
+            <TabsTrigger value="in_progress" className="px-6">進行中 ({inProgressTasks.length})</TabsTrigger>
+            <TabsTrigger value="done" className="px-6">完了 ({doneTasks.length})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="mt-6">
+          <TabsContent value="all" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tasks.map((task) => (
                 <PublicTaskCard key={task.id} task={task} />
@@ -69,19 +72,19 @@ export default function PublicClientView() {
             </div>
             {tasks.length === 0 && <EmptyState />}
           </TabsContent>
-          <TabsContent value="todo" className="mt-6">
+          <TabsContent value="todo" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {todoTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
             {todoTasks.length === 0 && <EmptyState />}
           </TabsContent>
-          <TabsContent value="in_progress" className="mt-6">
+          <TabsContent value="in_progress" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {inProgressTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
             {inProgressTasks.length === 0 && <EmptyState />}
           </TabsContent>
-          <TabsContent value="done" className="mt-6">
+          <TabsContent value="done" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {doneTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
             </div>
@@ -98,34 +101,42 @@ function PublicTaskCard({ task }: { task: Task }) {
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
 
   return (
-    <Card className="border-border/50 shadow-sm">
-      <CardHeader className="p-4 pb-2">
-        <Badge variant="outline" className={cn("mb-2 font-medium", color)}>
-          <StatusIcon className="w-3 h-3 mr-1" />
+    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden relative">
+      <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
+        task.status === 'done' ? "bg-primary" : 
+        task.status === 'in_progress' ? "bg-blue-500" : "bg-muted-foreground/30"
+      )} />
+      
+      <CardHeader className="p-5 pb-2">
+        <Badge variant="outline" className={cn("mb-3 font-bold px-2.5 py-0.5 text-[10px] uppercase tracking-wider", color)}>
+          <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
           {label}
         </Badge>
-        <CardTitle className="text-lg line-clamp-1">{task.title}</CardTitle>
+        <CardTitle className="text-xl font-bold leading-tight line-clamp-2">{task.title}</CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 min-h-[3rem]">
+      
+      <CardContent className="p-5 pt-0 pl-7">
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-6 min-h-[3rem] leading-relaxed">
           {task.description || "詳細説明はありません。"}
         </p>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4 text-xs font-medium">
-             <div className="flex items-center text-muted-foreground">
-              <FileText className="w-3 h-3 mr-1" />
-              受付: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy/MM/dd") : "-"}
+        
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
+              <FileText className="w-4 h-4 text-primary/50" />
+              <span>受付日: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy年MM月dd日") : "-"}</span>
             </div>
             <div className={cn(
-              "flex items-center px-2 py-1 rounded-md",
-              isOverdue ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+              "flex items-center gap-2 text-[11px] font-semibold p-2 rounded-lg",
+              isOverdue ? "bg-destructive/5 text-destructive" : "bg-muted/50 text-muted-foreground"
             )}>
-              <Calendar className="w-3 h-3 mr-1" />
-              期日: {format(new Date(task.dueDate), "yyyy/MM/dd")}
+              <Calendar className="w-4 h-4 text-primary/50" />
+              <span>完了予定: {format(new Date(task.dueDate), "yyyy年MM月dd日")}</span>
+              {isOverdue && <span className="ml-auto text-[9px] font-black uppercase tracking-tighter">Overdue</span>}
             </div>
           </div>
-          <div className="text-muted-foreground italic text-[10px]">
-            最終更新: {format(new Date(task.updatedAt), "HH:mm")}
+          <div className="text-muted-foreground/50 text-[10px] italic pt-2 border-t border-border/50">
+            最終更新: {format(new Date(task.updatedAt), "yyyy/MM/dd HH:mm")}
           </div>
         </div>
       </CardContent>
@@ -135,8 +146,11 @@ function PublicTaskCard({ task }: { task: Task }) {
 
 function EmptyState() {
   return (
-    <div className="text-center py-24 bg-muted/20 rounded-xl border border-dashed">
-      <p className="text-muted-foreground">表示できるタスクがありません。</p>
+    <div className="text-center py-32 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
+      <div className="bg-background w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+        <Clock className="w-8 h-8 text-muted-foreground opacity-20" />
+      </div>
+      <p className="text-muted-foreground font-medium">現在、表示できるタスクはありません。</p>
     </div>
   )
 }

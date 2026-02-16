@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -87,20 +88,20 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>タスク名</FormLabel>
+              <FormLabel className="text-sm font-semibold">タスク名</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input placeholder="例: 月次報告書の作成" {...field} />
+                  <Input placeholder="例: 月次報告書の作成" className="pr-24" {...field} />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 text-primary hover:text-primary/80"
+                    className="absolute right-1 top-1 text-primary hover:text-primary/80 h-8"
                     onClick={handleEnhance}
                     disabled={!field.value || isEnhancing}
                   >
                     {isEnhancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-                    AIで構成
+                    AI提案
                   </Button>
                 </div>
               </FormControl>
@@ -114,11 +115,11 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>説明</FormLabel>
+              <FormLabel className="text-sm font-semibold">詳細説明</FormLabel>
               <FormControl>
                 <Textarea 
                   placeholder="タスクの詳細を入力してください..." 
-                  className="min-h-[150px] resize-none" 
+                  className="min-h-[120px] resize-none border-muted-foreground/20 focus:border-primary" 
                   {...field} 
                 />
               </FormControl>
@@ -127,38 +128,39 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="receptionDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-2">受付日</FormLabel>
+                <FormLabel className="mb-2 text-sm font-semibold">受付日</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors",
                           !field.value && "text-muted-foreground"
                         )}
                       >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-primary opacity-70" />
                         {field.value ? (
                           format(new Date(field.value), "yyyy/MM/dd")
                         ) : (
                           <span>日付を選択</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 shadow-xl border-border" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
                       onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
                       initialFocus
+                      className="rounded-md border-none"
                     />
                   </PopoverContent>
                 </Popover>
@@ -172,32 +174,33 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             name="dueDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-2">期日</FormLabel>
+                <FormLabel className="mb-2 text-sm font-semibold">期日</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full pl-3 text-left font-normal border-muted-foreground/20 hover:border-primary transition-colors",
                           !field.value && "text-muted-foreground"
                         )}
                       >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-primary opacity-70" />
                         {field.value ? (
                           format(new Date(field.value), "yyyy/MM/dd")
                         ) : (
                           <span>日付を選択</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 shadow-xl border-border" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
                       onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
                       initialFocus
+                      className="rounded-md border-none"
                     />
                   </PopoverContent>
                 </Popover>
@@ -212,10 +215,10 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
           name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ステータス</FormLabel>
+              <FormLabel className="text-sm font-semibold">ステータス</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-muted-foreground/20">
                     <SelectValue placeholder="ステータスを選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -231,10 +234,12 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
         />
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="ghost" onClick={onCancel} className="px-6">
             キャンセル
           </Button>
-          <Button type="submit">保存</Button>
+          <Button type="submit" className="px-8 font-semibold shadow-md transition-all active:scale-95">
+            保存する
+          </Button>
         </div>
       </form>
     </Form>
