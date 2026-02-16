@@ -1,10 +1,48 @@
+
+"use client"
+
+import * as React from "react"
 import Link from "next/link"
 import { ArrowRight, CheckCircle, Clock, Layout, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getClients, getTasks } from "@/lib/task-service"
+import { Client, Task } from "@/lib/types"
 
 export default function Home() {
+  const [clients, setClients] = React.useState<Client[]>([])
+  const [stats, setStats] = React.useState({
+    todayTasks: 0,
+    completedTotal: 0,
+    clientCount: 0,
+    completionRate: 0
+  })
+
+  React.useEffect(() => {
+    const allClients = getClients()
+    const aggregatedTasks: (Task & { clientName: string })[] = []
+    
+    allClients.forEach(client => {
+      const clientTasks = getTasks(client.id)
+      clientTasks.forEach(t => aggregatedTasks.push({ ...t, clientName: client.name }))
+    })
+
+    const today = new Date().toISOString().split('T')[0]
+    const todayTasksCount = aggregatedTasks.filter(t => t.dueDate === today && t.status !== 'done').length
+    const completedTotalCount = aggregatedTasks.filter(t => t.status === 'done').length
+    const totalTasksCount = aggregatedTasks.length
+    const rate = totalTasksCount > 0 ? Math.round((completedTotalCount / totalTasksCount) * 100) : 0
+
+    setClients(allClients)
+    setStats({
+      todayTasks: todayTasksCount,
+      completedTotal: completedTotalCount,
+      clientCount: allClients.length,
+      completionRate: rate
+    })
+  }, [])
+
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex flex-col gap-2">
@@ -21,8 +59,8 @@ export default function Home() {
             <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">残り3つの重要タスク</p>
+            <div className="text-2xl font-bold">{stats.todayTasks}</div>
+            <p className="text-xs text-muted-foreground">期日が今日の未完了タスク</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -31,8 +69,8 @@ export default function Home() {
             <CheckCircle className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">48</div>
-            <p className="text-xs text-muted-foreground">今週の合計</p>
+            <div className="text-2xl font-bold">{stats.completedTotal}</div>
+            <p className="text-xs text-muted-foreground">全取引先の合計</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -41,18 +79,18 @@ export default function Home() {
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">管理可能なクライアント</p>
+            <div className="text-2xl font-bold">{stats.clientCount}</div>
+            <p className="text-xs text-muted-foreground">現在管理中の企業数</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">稼働時間</CardTitle>
+            <CardTitle className="text-sm font-medium">タスク完了率</CardTitle>
             <Layout className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94%</div>
-            <p className="text-xs text-muted-foreground">前月比 +2.4%</p>
+            <div className="text-2xl font-bold">{stats.completionRate}%</div>
+            <p className="text-xs text-muted-foreground">全体の進捗状況</p>
           </CardContent>
         </Card>
       </div>
@@ -61,29 +99,34 @@ export default function Home() {
         <Card className="lg:col-span-4 border-border/50">
           <CardHeader>
             <CardTitle>取引先別ダッシュボード</CardTitle>
-            <CardDescription>専用のURLで個別にタスク管理が可能です。</CardDescription>
+            <CardDescription>各取引先の専用ページでタスクを管理できます。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { id: "acme-inc", name: "株式会社アクメ", color: "bg-blue-500", count: 8 },
-              { id: "global-corp", name: "グローバル合同会社", color: "bg-green-500", count: 5 },
-              { id: "future-tech", name: "フューチャー・テック", color: "bg-purple-500", count: 12 },
-            ].map((client) => (
-              <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`w-3 h-3 rounded-full ${client.color}`} />
-                  <div>
-                    <p className="font-medium">{client.name}</p>
-                    <p className="text-xs text-muted-foreground">{client.count}件のタスク</p>
+            {clients.map((client) => {
+              const taskCount = getTasks(client.id).length
+              return (
+                <div key={client.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-3 h-3 rounded-full ${client.color}`} />
+                    <div>
+                      <p className="font-medium">{client.name}</p>
+                      <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
+                    </div>
                   </div>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/${client.id}`}>
+                      開く <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </div>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/${client.id}`}>
-                    開く <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+              )
+            })}
+            {clients.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>取引先が登録されていません。</p>
+                <p className="text-xs mt-1">サイドバーの「設定」から追加してください。</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
         <Card className="lg:col-span-3 border-border/50">
