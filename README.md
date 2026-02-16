@@ -7,7 +7,7 @@ NexTaskを世界中に公開し、友人が401エラーなしで閲覧できる�
 ### 1. コードをGitHubにプッシュする
 Firebase App HostingはGitHubのリポジトリを監視して自動で公開を行います。
 - 自分のGitHubアカウントに新しいリポジトリ（例：`nextask-app`）を作成します。
-- この開発環境のコードをそのリポジトリにプッシュしてください。
+- この開発環境（Firebase Studio）にあるコードをそのリポジトリにプッシュしてください。
 
 ### 2. FirebaseコンソールでApp Hostingを開始
 1. [Firebase Console](https://console.firebase.google.com/) にアクセス。
