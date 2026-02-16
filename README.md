@@ -8,7 +8,18 @@ Firebase App Hosting を利用するには、Firebase プロジェクトを **�
 - **無料枠があります**: 小規模な利用であれば、多くの場合 **実質 0 円** で運用可能です。
 - **予算額（予算アラート）**: 支払う金額ではなく「この金額に近づいたら通知する」しきい値です。まずは **1,000円** 程度に設定するのが安心です。
 
-## 🚀 GitHub へのコード送信（重要：詰まったらここを見てください）
+## 🚀 GitHubへのログイン認証（重要）
+
+`git push` をした際に認証エラーが出る場合は、GitHubの「パーソナルアクセストークン (PAT)」が必要です。
+
+### トークンの発行方法
+1. GitHubの **Settings > Developer settings > Personal access tokens > Tokens (classic)** を開く。
+2. 「Generate new token (classic)」をクリック。
+3. **Note**: 「Nextask-Deploy」など分かりやすい名前を付ける。
+4. **Select scopes**: 一番上の **`repo`** にチェックを入れる（これにより送信権限が付与されます）。
+5. 「Generate token」をクリックし、表示された `ghp_...` で始まる長い文字列をコピーする（※一度しか表示されないので注意！）。
+
+## 🚀 GitHub へのコード送信手順
 
 ターミナルで以下のコマンドを順番に実行します。
 
@@ -23,18 +34,13 @@ git remote add origin https://github.com/s0823pro-cmyk/nextask-app.git
 git push -u origin main
 ```
 
-### 🔑 ログインを求められたら（認証の突破方法）
-
-`git push` をした後に、以下のいずれかが表示されます。
-
-#### A. 「Username」と「Password」を求められた場合
+### 🔑 ログインを求められたら
 1. **Username**: `s0823pro-cmyk` と入力して Enter。
-2. **Password**: **GitHubのパスワードではありません！** GitHubで発行した **「パーソナルアクセストークン (PAT)」** を貼り付けて Enter。
+2. **Password**: 先ほど発行した **「パーソナルアクセストークン (PAT)」** を貼り付けて Enter。
    - ※貼り付けても画面には何も表示されませんが、入力はされています。
 
-#### B. どうしてもエラーが出る場合の「最終手段」
-GitHubで発行したトークン（例: `ghp_xxxx...`）を直接URLに埋め込んで送信します。
-以下の `[あなたのトークン]` の部分を自分のトークンに書き換えて実行してください。
+### 💡 どうしてもエラーが出る場合の「最終手段」
+以下の `[あなたのトークン]` の部分を自分のトークン（ghp_...）に書き換えて、一行で実行してください。
 ```bash
 git remote set-url origin https://[あなたのトークン]@github.com/s0823pro-cmyk/nextask-app.git
 git push -u origin main
@@ -51,7 +57,5 @@ GitHubにファイルが表示されたら、Firebaseコンソールで設定し
 3. **設定**:
    - **ライブブランチ**: `main`
    - **アプリのルートディレクトリ**: 空欄（または `/`）
-   - **リージョン**: `asia-east1` (台湾)
+   - **リージョン**: `asia-east1` (台湾) を推奨
 4. 「デプロイ」を実行。
-
-完了すると、ついに本番用URLが発行されます！
