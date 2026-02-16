@@ -154,7 +154,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   }
 
   const isOverdue = React.useMemo(() => {
-    if (task.status === 'done' || !task.dueDate) return false
+    if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       return new Date(task.dueDate) < new Date()
     } catch {

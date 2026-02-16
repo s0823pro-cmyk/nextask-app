@@ -89,9 +89,9 @@ export default function Home() {
     const todayStr = now.toISOString().split('T')[0]
     const tasks = allTasks || []
     
-    const todayTasksCount = tasks.filter(t => t.dueDate === todayStr && t.status !== 'done').length
+    const todayTasksCount = tasks.filter(t => t.dueDate === todayStr && t.status !== 'done' && t.status !== 'awaiting_payment').length
     const overdueTasksCount = tasks.filter(t => {
-      if (t.status === 'done' || !t.dueDate) return false
+      if (t.status === 'done' || t.status === 'awaiting_payment' || !t.dueDate) return false
       try {
         return new Date(t.dueDate) < now
       } catch (e) {

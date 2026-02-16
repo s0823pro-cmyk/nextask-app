@@ -35,7 +35,7 @@ const statusConfig = {
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
-  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done'
+  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done' && task.status !== 'awaiting_payment'
 
   const handleViewPdf = (pdfData: string, pdfName: string) => {
     const newWindow = window.open();
