@@ -48,7 +48,11 @@ export default function PublicClientView() {
   
   const { data: tasksData, isLoading } = useCollection<Task>(tasksQuery);
 
-  if (!mounted || isLoading) {
+  if (!mounted) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -130,10 +134,16 @@ export default function PublicClientView() {
 }
 
 function PublicTaskCard({ task }: { task: Task }) {
+  const [mounted, setMounted] = React.useState(false)
+  
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   
   const formatDateSafe = (dateStr: string | undefined) => {
-    if (!dateStr) return "-"
+    if (!dateStr || !mounted) return "-"
     try {
       const date = parseISO(dateStr)
       return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
@@ -143,14 +153,14 @@ function PublicTaskCard({ task }: { task: Task }) {
   }
 
   const isOverdue = React.useMemo(() => {
-    if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
+    if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
-      const date = new Date(task.dueDate)
+      const date = parseISO(task.dueDate)
       return isValid(date) && date < new Date()
     } catch {
       return false
     }
-  }, [task.dueDate, task.status])
+  }, [task.dueDate, task.status, mounted])
 
   const handleViewPdf = (pdfData: string, pdfName: string) => {
     const newWindow = window.open();

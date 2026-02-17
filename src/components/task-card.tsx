@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react"
 import { format, isValid, parseISO } from "date-fns"
 import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins } from "lucide-react"
 
@@ -34,10 +35,16 @@ const statusConfig = {
 }
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
   
   const formatDateSafe = (dateStr: string | undefined) => {
-    if (!dateStr) return "-"
+    if (!dateStr || !mounted) return "-"
     try {
       const date = parseISO(dateStr)
       return isValid(date) ? format(date, "yyyy/MM/dd") : "-"
@@ -46,15 +53,15 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
     }
   }
 
-  const isOverdue = (() => {
-    if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
+  const isOverdue = React.useMemo(() => {
+    if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
-      const date = new Date(task.dueDate)
+      const date = parseISO(task.dueDate)
       return isValid(date) && date < new Date()
     } catch {
       return false
     }
-  })()
+  }, [task.dueDate, task.status, mounted])
 
   const handleViewPdf = (pdfData: string, pdfName: string) => {
     const newWindow = window.open();
