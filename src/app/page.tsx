@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle, LogIn } from "lucide-react"
+import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle, LogIn, Building2, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -82,6 +82,9 @@ export default function Home() {
       return a.name.localeCompare(b.name, "ja")
     })
   }, [clients])
+
+  const primeClients = React.useMemo(() => sortedClients.filter(c => c.clientType === 'prime'), [sortedClients]);
+  const subClients = React.useMemo(() => sortedClients.filter(c => c.clientType === 'sub'), [sortedClients]);
 
   const stats = React.useMemo(() => {
     if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0, overdueTasks: 0 }
@@ -198,6 +201,31 @@ export default function Home() {
 
   const isAnonymous = user?.isAnonymous;
 
+  const renderClientGrid = (clientList: Client[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+      {clientList.map((client) => {
+        const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
+        const borderColor = client.color.replace('bg-', 'border-')
+        return (
+          <Link 
+            key={client.id} 
+            href={`/${client.id}`}
+            className={`flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors active:scale-[0.98] border-l-4 ${borderColor}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-3 h-3 rounded-full ${client.color}`} />
+              <div>
+                <p className="font-bold text-sm md:text-base">{client.name}</p>
+                <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -312,43 +340,27 @@ export default function Home() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-border/50">
-            <CardHeader className="p-4 md:p-6">
-              <CardTitle className="text-lg md:text-xl">取引先別ダッシュボード</CardTitle>
-              <CardDescription className="text-xs md:text-sm">各取引先の専用ページでタスクを管理できます。</CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6 pt-0 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                {sortedClients.map((client) => {
-                  const taskCount = (allTasks || []).filter(t => t.clientId === client.id).length
-                  const borderColor = client.color.replace('bg-', 'border-')
-                  return (
-                    <Link 
-                      key={client.id} 
-                      href={`/${client.id}`}
-                      className={`flex items-center justify-between p-4 border rounded-xl hover:bg-muted/50 transition-colors active:scale-[0.98] border-l-4 ${borderColor}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full ${client.color}`} />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm md:text-base">{client.name}</p>
-                            {client.clientType && (
-                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-normal">
-                                {client.clientType === 'prime' ? '元請け' : '下請け'}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
-                        </div>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </Link>
-                  )
-                })}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                <Building2 className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">元請け</h2>
               </div>
-            </CardContent>
-          </Card>
+              {primeClients.length > 0 ? renderClientGrid(primeClients) : (
+                <p className="text-sm text-muted-foreground px-4 py-8 border border-dashed rounded-xl text-center">登録されている元請けはありません。</p>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                <Users className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">下請け</h2>
+              </div>
+              {subClients.length > 0 ? renderClientGrid(subClients) : (
+                <p className="text-sm text-muted-foreground px-4 py-8 border border-dashed rounded-xl text-center">登録されている下請けはありません。</p>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
