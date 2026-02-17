@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -31,10 +30,6 @@ const statusConfig = {
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
 
-/**
- * 取引先向け公開ポータル画面。
- * 管理画面で追加されたタスクやPDF資料を閲覧・ダウンロードできます。
- */
 export default function PublicClientView() {
   const { identifier } = useParams<{ identifier: string }>()
   const db = useFirestore()

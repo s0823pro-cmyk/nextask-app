@@ -1,5 +1,4 @@
-
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -10,8 +9,12 @@ export const metadata: Metadata = {
   description: '現場の進捗をリアルタイムで共有。取引先別の専用ポータルで透明性の高い業務フローを実現。',
   keywords: ['タスク管理', '現場管理', '建築', '工事', '進捗共有'],
   authors: [{ name: 'NexTask Team' }],
-  viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

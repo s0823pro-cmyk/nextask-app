@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -33,10 +32,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc, query, where } from "firebase/firestore"
 
-/**
- * 取引先別の個別ダッシュボード画面。
- * タスクの作成・編集・削除、共有リンクの発行などを行います。
- */
 export default function ClientDashboard() {
   const { clientId } = useParams<{ clientId: string }>()
   const db = useFirestore()
@@ -48,11 +43,9 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  // 取引先情報の取得
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
-  // この取引先に紐づくタスク一覧の取得
   const tasksQuery = useMemoFirebase(() => {
     return query(collection(db, 'tasks'), where('clientId', '==', clientId));
   }, [db, clientId]);
@@ -119,7 +112,6 @@ export default function ClientDashboard() {
     }
   }
 
-  // 検索フィルタリング (tasksがnullの場合を考慮)
   const filteredTasks = (tasks || []).filter(t => 
     (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (t.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -206,22 +198,10 @@ export default function ClientDashboard() {
             </div>
           ) : renderTaskGrid(inProgressList)}
         </TabsContent>
-
-        <TabsContent value="pending" className="mt-6">
-          {renderTaskGrid(pendingList)}
-        </TabsContent>
-
-        <TabsContent value="awaiting_payment" className="mt-6">
-          {renderTaskGrid(awaitingPaymentList)}
-        </TabsContent>
-
-        <TabsContent value="done" className="mt-6">
-          {renderTaskGrid(doneList)}
-        </TabsContent>
-
-        <TabsContent value="all" className="mt-6">
-          {renderTaskGrid(filteredTasks)}
-        </TabsContent>
+        <TabsContent value="pending" className="mt-6">{renderTaskGrid(pendingList)}</TabsContent>
+        <TabsContent value="awaiting_payment" className="mt-6">{renderTaskGrid(awaitingPaymentList)}</TabsContent>
+        <TabsContent value="done" className="mt-6">{renderTaskGrid(doneList)}</TabsContent>
+        <TabsContent value="all" className="mt-6">{renderTaskGrid(filteredTasks)}</TabsContent>
       </Tabs>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
