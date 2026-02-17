@@ -34,7 +34,8 @@ import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase
 import { collection, doc, query, where } from "firebase/firestore"
 
 export default function ClientDashboard() {
-  const { clientId } = useParams<{ clientId: string }>()
+  const params = useParams()
+  const clientId = params?.clientId as string
   const db = useFirestore()
   
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -44,16 +45,19 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
+  const clientRef = useMemoFirebase(() => {
+    return clientId ? doc(db, 'clients', clientId) : null
+  }, [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
   const tasksQuery = useMemoFirebase(() => {
+    if (!clientId) return null;
     return query(collection(db, 'tasks'), where('clientId', '==', clientId));
   }, [db, clientId]);
   const { data: tasks, isLoading } = useCollection<Task>(tasksQuery);
 
   const handleCreateTask = (data: Partial<Task>) => {
-    if (!client) return;
+    if (!client || !clientId) return;
     setIsCreateOpen(false);
     const now = new Date().toISOString();
     const newTask: Task = {
@@ -93,7 +97,7 @@ export default function ClientDashboard() {
   }
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const task = (tasks || []).find(t => t.id === taskId);
+    const task = (tasks || []).find(t => t?.id === taskId);
     if (task && client) {
       saveTaskWithSync(db, { ...task, status, updatedAt: new Date().toISOString() }, client.dedicatedUrlIdentifier);
       toast({ title: "ステータスを更新しました" });
@@ -113,11 +117,13 @@ export default function ClientDashboard() {
     }
   }
 
-  const filteredTasks = (tasks || []).filter(t => 
-    (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (t.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (t.constructionType || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = (tasks || []).filter(t => {
+    if (!t) return false;
+    const q = searchQuery.toLowerCase();
+    return (t.title || "").toLowerCase().includes(q) ||
+           (t.description || "").toLowerCase().includes(q) ||
+           (t.constructionType || "").toLowerCase().includes(q);
+  });
 
   const inProgressList = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo');
   const pendingList = filteredTasks.filter(t => t.status === 'pending');
@@ -187,7 +193,7 @@ export default function ClientDashboard() {
         <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
           <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressList.length})</TabsTrigger>
           <TabsTrigger value="pending" className="flex-1">保留 ({pendingList.length})</TabsTrigger>
-          <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentList.length})</TabsTrigger>
+          <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
           <TabsTrigger value="done" className="flex-1">完了 ({doneList.length})</TabsTrigger>
           <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
         </TabsList>

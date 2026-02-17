@@ -14,7 +14,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogTrigger 
 } from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
@@ -32,7 +33,8 @@ const statusConfig = {
 }
 
 export default function PublicClientView() {
-  const { identifier } = useParams<{ identifier: string }>()
+  const params = useParams()
+  const identifier = params?.identifier as string
   const db = useFirestore()
   const [searchQuery, setSearchQuery] = React.useState("")
   const [mounted, setMounted] = React.useState(false)
@@ -56,17 +58,10 @@ export default function PublicClientView() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  const tasks = tasksData || []
+  const tasks = Array.isArray(tasksData) ? tasksData : []
 
   const filteredTasks = tasks.filter(t => {
+    if (!t) return false;
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return true;
 
@@ -109,29 +104,35 @@ export default function PublicClientView() {
           </div>
         </div>
 
-        <Tabs defaultValue="in_progress" className="w-full">
-          <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
-            <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
-            <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
-            <TabsTrigger value="done" className="flex-1">完了 ({doneTasks.length})</TabsTrigger>
-            <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
-          </TabsList>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <Tabs defaultValue="in_progress" className="w-full">
+            <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
+              <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
+              <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
+              <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
+              <TabsTrigger value="done" className="flex-1">完了 ({doneTasks.length})</TabsTrigger>
+              <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
+            </TabsList>
 
-          {["in_progress", "pending", "awaiting_payment", "done", "all"].map((val) => {
-            const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : val === "awaiting_payment" ? awaitingPaymentTasks : doneTasks
-            return (
-              <TabsContent key={val} value={val} className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {list.map((task) => (
-                    <PublicTaskCard key={task.id} task={task} />
-                  ))}
-                </div>
-                {list.length === 0 && <EmptyState isSearching={!!searchQuery} />}
-              </TabsContent>
-            )
-          })}
-        </Tabs>
+            {["in_progress", "pending", "awaiting_payment", "done", "all"].map((val) => {
+              const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : val === "awaiting_payment" ? awaitingPaymentTasks : doneTasks
+              return (
+                <TabsContent key={val} value={val} className="mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {list.map((task) => (
+                      <PublicTaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                  {list.length === 0 && <EmptyState isSearching={!!searchQuery} />}
+                </TabsContent>
+              )
+            })}
+          </Tabs>
+        )}
       </div>
     </div>
   )
@@ -144,9 +145,12 @@ function PublicTaskCard({ task }: { task: Task }) {
     setMounted(true)
   }, [])
 
-  const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
+  if (!task) return null;
+
+  const config = statusConfig[task.status] || statusConfig.in_progress
+  const StatusIcon = config.icon
   
-  const formatDateSafe = (dateStr: string | undefined) => {
+  const formatDateSafe = (dateStr: string | undefined | null) => {
     if (!dateStr || !mounted) return "-"
     try {
       const date = parseISO(dateStr)
@@ -160,7 +164,9 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
-      return isValid(date) && date.getTime() < new Date().setHours(0,0,0,0)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return isValid(date) && date.getTime() < today.getTime()
     } catch {
       return false
     }
@@ -183,7 +189,7 @@ function PublicTaskCard({ task }: { task: Task }) {
     document.body.removeChild(link);
   }
 
-  const pdfCount = task.pdfs?.length || 0
+  const pdfCount = Array.isArray(task.pdfs) ? task.pdfs.length : 0
 
   return (
     <Card className="border-border/50 relative flex flex-col group overflow-hidden">
@@ -193,9 +199,9 @@ function PublicTaskCard({ task }: { task: Task }) {
       
       <CardHeader className="p-4 pb-2">
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px]", color)}>
+          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px]", config.color)}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {label}
+            {config.label}
           </Badge>
           {task.constructionType && (
             <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700">
@@ -215,7 +221,7 @@ function PublicTaskCard({ task }: { task: Task }) {
         
         <Dialog>
           <DialogTrigger asChild>
-            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4">
+            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline">
               <Eye className="w-3 h-3" /> 全文を確認
             </button>
           </DialogTrigger>
