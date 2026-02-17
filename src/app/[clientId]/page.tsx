@@ -84,8 +84,8 @@ export default function ClientDashboard() {
   const handleDeleteTask = (taskId: string) => setTaskToDelete(taskId)
 
   const confirmDeleteTask = () => {
-    if (taskToDelete) {
-      deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
+    if (taskToDelete && client) {
+      deleteTaskWithSync(db, taskToDelete, client.dedicatedUrlIdentifier);
       toast({ title: "削除しました", variant: "destructive" });
       setTaskToDelete(null);
     }
