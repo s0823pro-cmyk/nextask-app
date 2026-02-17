@@ -154,7 +154,7 @@ export default function PublicClientView() {
                       該当するタスクはありません。
                     </div>
                   )}
-                </TabsContent> group.list.length > 0 && 
+                </TabsContent>
               ))}
             </div>
           </Tabs>
@@ -226,9 +226,11 @@ function PublicTaskCard({ task }: { task: Task }) {
         </p>
         
         <Dialog>
-          <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
-            <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
-          </button>
+          <DialogTrigger asChild>
+            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
+              <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
+            </button>
+          </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-2xl">
             <DialogHeader><DialogTitle className="text-xl">{task.title}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-xl bg-muted/10">

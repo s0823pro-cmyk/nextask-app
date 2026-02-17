@@ -7,11 +7,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // ⚠️ 重要：ここも自分のメールアドレスに書き換えてください
+    // 指定された管理者アカウントのみに書き込み権限を付与
     function isAdmin() {
       return isSignedIn() 
         && request.auth.token.email_verified == true 
-        && request.auth.token.email in ["[あなたのメールアドレス@gmail.com]"];
+        && request.auth.token.email == "s0823.pro@gmail.com";
     }
 
     match /clients/{clientId} {

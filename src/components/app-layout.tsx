@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Lock, LogIn, LayoutDashboard, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// ⚠️ 重要：ここに管理者のGoogleメールアドレスを入力してください
-const ALLOWED_ADMINS = ["[あなたのメールアドレス@gmail.com]"];
+// 管理者として許可するGoogleアカウントのメールアドレス
+const ALLOWED_ADMINS = ["s0823.pro@gmail.com"];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -74,7 +74,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {user && !user.isAnonymous 
-                ? `現在のアカウント（${user.email}）には管理者権限がありません。許可されたメールアドレスでログインしてください。`
+                ? `現在のアカウント（${user.email}）には管理者権限がありません。許可されたメールアドレス（${ALLOWED_ADMINS[0]}）でログインしてください。`
                 : '管理画面にアクセスするには管理者アカウントでの認証が必要です。'}
             </p>
           </div>
