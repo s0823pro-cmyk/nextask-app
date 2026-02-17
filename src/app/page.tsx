@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users, Plus, X } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users, Plus, X, PauseCircle } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -36,7 +36,7 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
-type FilterType = "none" | "today" | "in_progress" | "awaiting_payment" | "overdue"
+type FilterType = "none" | "today" | "in_progress" | "pending" | "awaiting_payment" | "overdue"
 
 export default function Home() {
   const db = useFirestore()
@@ -76,12 +76,13 @@ export default function Home() {
   const todayStr = now.toISOString().split('T')[0]
 
   const stats = React.useMemo(() => {
-    if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0, overdueTasks: 0 }
+    if (!mounted) return { todayTasks: 0, inProgressTasks: 0, pendingTasks: 0, awaitingPaymentTasks: 0, overdueTasks: 0 }
     const tasks = allTasks || []
     
     return {
       todayTasks: tasks.filter(t => t.dueDate === todayStr && t.status !== 'done').length,
       inProgressTasks: tasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
+      pendingTasks: tasks.filter(t => t.status === 'pending').length,
       awaitingPaymentTasks: tasks.filter(t => t.status === 'awaiting_payment').length,
       overdueTasks: tasks.filter(t => t.status !== 'done' && t.status !== 'awaiting_payment' && t.dueDate && t.dueDate < todayStr).length
     }
@@ -96,6 +97,7 @@ export default function Home() {
         switch (activeFilter) {
           case "today": return t.dueDate === todayStr && t.status !== 'done'
           case "in_progress": return t.status === 'todo' || t.status === 'in_progress'
+          case "pending": return t.status === 'pending'
           case "awaiting_payment": return t.status === 'awaiting_payment'
           case "overdue": return t.status !== 'done' && t.status !== 'awaiting_payment' && t.dueDate && t.dueDate < todayStr
           default: return true
@@ -250,7 +252,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <Card 
           className={cn(
             "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
@@ -258,12 +260,12 @@ export default function Home() {
           )}
           onClick={() => toggleFilter("today")}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-bold">今日のタスク</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2">
+            <CardTitle className="text-[10px] md:text-xs font-bold">今日</CardTitle>
+            <Clock className="h-3 w-3 md:h-4 md:w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl md:text-2xl font-bold">{stats.todayTasks}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.todayTasks}</div>
           </CardContent>
         </Card>
         <Card 
@@ -273,12 +275,27 @@ export default function Home() {
           )}
           onClick={() => toggleFilter("in_progress")}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-bold">進行中</CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2">
+            <CardTitle className="text-[10px] md:text-xs font-bold">進行中</CardTitle>
+            <Activity className="h-3 w-3 md:h-4 md:w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl md:text-2xl font-bold">{stats.inProgressTasks}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.inProgressTasks}</div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+            activeFilter === "pending" ? "ring-2 ring-orange-500 bg-orange-50" : ""
+          )}
+          onClick={() => toggleFilter("pending")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2">
+            <CardTitle className="text-[10px] md:text-xs font-bold">保留</CardTitle>
+            <PauseCircle className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg md:text-2xl font-bold text-orange-600">{stats.pendingTasks}</div>
           </CardContent>
         </Card>
         <Card 
@@ -288,12 +305,12 @@ export default function Home() {
           )}
           onClick={() => toggleFilter("awaiting_payment")}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-bold">入金待ち</CardTitle>
-            <Coins className="h-4 w-4 text-amber-500" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2">
+            <CardTitle className="text-[10px] md:text-xs font-bold">入金待ち</CardTitle>
+            <Coins className="h-3 w-3 md:h-4 md:w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
+            <div className="text-lg md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
           </CardContent>
         </Card>
         <Card 
@@ -303,12 +320,12 @@ export default function Home() {
           )}
           onClick={() => toggleFilter("overdue")}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm font-bold text-destructive">期限切れ</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2">
+            <CardTitle className="text-[10px] md:text-xs font-bold text-destructive">期限切れ</CardTitle>
+            <AlertTriangle className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
+            <div className="text-lg md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
           </CardContent>
         </Card>
       </div>
@@ -323,6 +340,7 @@ export default function Home() {
                     <span className="font-bold">
                       {activeFilter === "today" && "今日のタスク"}
                       {activeFilter === "in_progress" && "進行中のタスク"}
+                      {activeFilter === "pending" && "保留中のタスク"}
                       {activeFilter === "awaiting_payment" && "入金待ちのタスク"}
                       {activeFilter === "overdue" && "期限切れのタスク"}
                     </span>
