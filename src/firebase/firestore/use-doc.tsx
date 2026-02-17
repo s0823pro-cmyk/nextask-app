@@ -26,10 +26,18 @@ export interface UseDocResult<T> {
 }
 
 /**
+ * Options for the useDoc hook.
+ */
+export interface UseDocOptions {
+  suppressGlobalError?: boolean;
+}
+
+/**
  * React hook to subscribe to a single Firestore document in real-time.
  */
 export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
+  options: UseDocOptions = {}
 ): UseDocResult<T> {
   type StateDataType = WithId<T> | null;
 
@@ -69,12 +77,14 @@ export function useDoc<T = any>(
         setData(null)
         setIsLoading(false)
 
-        errorEmitter.emit('permission-error', contextualError);
+        if (!options.suppressGlobalError) {
+          errorEmitter.emit('permission-error', contextualError);
+        }
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef]);
+  }, [memoizedDocRef, options.suppressGlobalError]);
 
   return { data, isLoading, error };
 }

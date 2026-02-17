@@ -1,8 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, LogIn, Building2, Users } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, LogIn, Building2, Users, Lock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,7 +40,7 @@ const COLOR_ORDER: Record<string, number> = {
 export default function Home() {
   const db = useFirestore()
   const auth = useAuth()
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
@@ -120,7 +121,33 @@ export default function Home() {
     setIsEditOpen(true);
   }
 
-  if (!mounted) return null;
+  if (!mounted || isUserLoading) return (
+    <div className="flex-1 flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
+
+  // 管理者権限チェック（匿名ユーザーは管理画面を見れない）
+  if (user?.isAnonymous) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <div className="bg-muted p-6 rounded-2xl border max-w-sm space-y-4">
+          <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto">
+            <Lock className="h-6 w-6 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold">管理画面へのアクセス制限</h2>
+            <p className="text-muted-foreground text-sm">
+              管理画面を閲覧するには、管理者アカウントでのログインが必要です。
+            </p>
+          </div>
+          <Button onClick={() => initiateGoogleSignIn(auth)} className="w-full">
+            <LogIn className="mr-2 h-4 w-4" /> Googleで管理者ログイン
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const renderClientGrid = (clientList: Client[]) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -156,11 +183,6 @@ export default function Home() {
         </div>
         
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
-          {user?.isAnonymous && (
-            <Button variant="outline" size="sm" onClick={() => initiateGoogleSignIn(auth)} className="gap-2">
-              <LogIn className="h-4 w-4" /> Googleログイン
-            </Button>
-          )}
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 

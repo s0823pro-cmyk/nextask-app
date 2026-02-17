@@ -15,7 +15,6 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogTrigger 
 } from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
@@ -238,11 +237,9 @@ function PublicTaskCard({ task }: { task: Task }) {
         </p>
         
         <Dialog>
-          <DialogTrigger asChild>
-            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
-              <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
-            </button>
-          </DialogTrigger>
+          <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
+            <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
+          </button>
           <DialogContent className="sm:max-w-[600px] w-[95vw]">
             <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md bg-muted/10">
