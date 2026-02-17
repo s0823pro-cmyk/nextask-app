@@ -34,6 +34,10 @@ import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase
 import { collection, doc, query, where } from "firebase/firestore"
 import { Badge } from "@/components/ui/badge"
 
+/**
+ * 取引先別の個別ダッシュボード画面。
+ * タスクの作成・編集・削除、共有リンクの発行などを行います。
+ */
 export default function ClientDashboard() {
   const { clientId } = useParams<{ clientId: string }>()
   const db = useFirestore()
@@ -45,9 +49,11 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
+  // 取引先情報の取得
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
+  // この取引先に紐づくタスク一覧の取得
   const tasksQuery = useMemoFirebase(() => {
     return query(collection(db, 'tasks'), where('clientId', '==', clientId));
   }, [db, clientId]);
@@ -94,7 +100,7 @@ export default function ClientDashboard() {
   }
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const task = (tasks || [])?.find(t => t.id === taskId);
+    const task = (tasks || []).find(t => t.id === taskId);
     if (task && client) {
       saveTaskWithSync(db, { ...task, status, updatedAt: new Date().toISOString() }, client.dedicatedUrlIdentifier);
       toast({ title: "ステータスを更新しました" });
@@ -104,15 +110,21 @@ export default function ClientDashboard() {
   const copyShareLink = async () => {
     if (!client) return;
     const url = `${window.location.origin}/view/${client.dedicatedUrlIdentifier}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "URLをコピーしました" });
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "共有URLをコピーしました" });
+    } catch (err) {
+      toast({ title: "コピーに失敗しました", variant: "destructive" });
+    }
   }
 
+  // 検索フィルタリング
   const filteredTasks = (tasks || []).filter(t => 
     (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (t.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (t.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.constructionType || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -121,11 +133,12 @@ export default function ClientDashboard() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${client?.color || 'bg-gray-400'}`} />
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+              {client?.clientType === 'prime' ? <Building2 className="h-3 w-3" /> : <Users className="h-3 w-3" />}
               {client?.clientType === 'prime' ? '元請け' : '下請け'}
             </span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{client?.name || '...'}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{client?.name || '読み込み中...'}</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10">
@@ -147,7 +160,7 @@ export default function ClientDashboard() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder="検索..." 
+          placeholder="タスクを検索..." 
           className="pl-9" 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -161,8 +174,39 @@ export default function ClientDashboard() {
           <TabsTrigger value="done" className="flex-1">完了</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-6">
+          {isLoading ? (
+            <div className="flex justify-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTasks.map((task) => (
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} 
+                  onDelete={handleDeleteTask} 
+                  onStatusChange={handleStatusChange} 
+                />
+              ))}
+              {filteredTasks.length === 0 && (
+                <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl text-muted-foreground">
+                  タスクが見つかりませんでした。
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="in_progress" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.map((task) => (
+            {filteredTasks.filter(t => t.status !== 'done').map((task) => (
+              <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="done" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTasks.filter(t => t.status === 'done').map((task) => (
               <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
@@ -178,7 +222,10 @@ export default function ClientDashboard() {
 
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>削除しますか？</AlertDialogTitle></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle>削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>このタスクを削除します。この操作は取り消せません。</AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground">削除する</AlertDialogAction>

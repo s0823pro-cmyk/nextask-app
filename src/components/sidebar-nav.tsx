@@ -54,6 +54,10 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
+/**
+ * サイドバーコンポーネント。
+ * ホーム、元請け、下請けのリストを表示し、取引先の管理も行います。
+ */
 export function SidebarNav() {
   const pathname = usePathname()
   const db = useFirestore()
@@ -115,11 +119,11 @@ export function SidebarNav() {
     <>
       <Sidebar collapsible="icon">
         <SidebarHeader className="h-16 flex items-center px-4">
-          <div className="flex items-center gap-2 font-bold text-xl text-primary-foreground">
+          <div className="flex items-center gap-2 font-bold text-xl text-primary">
             <div className="bg-primary p-1 rounded-lg">
               <LayoutDashboard className="h-6 w-6 text-white" />
             </div>
-            <span className="group-data-[collapsible=icon]:hidden">NexTask</span>
+            <span className="group-data-[collapsible=icon]:hidden text-foreground">NexTask</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -136,10 +140,12 @@ export function SidebarNav() {
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> 元請け</SidebarGroupLabel>
             {renderClientList(primeClients)}
+            {primeClients.length === 0 && <p className="text-[10px] text-muted-foreground px-4 py-2 group-data-[collapsible=icon]:hidden">なし</p>}
           </SidebarGroup>
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-1.5"><Users className="h-3 w-3" /> 下請け</SidebarGroupLabel>
             {renderClientList(subClients)}
+            {subClients.length === 0 && <p className="text-[10px] text-muted-foreground px-4 py-2 group-data-[collapsible=icon]:hidden">なし</p>}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -147,7 +153,7 @@ export function SidebarNav() {
             <SidebarMenuItem>
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
-                  <SidebarMenuButton tooltip="設定"><Settings className="h-4 w-4" /><span>設定</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="取引先管理"><Settings className="h-4 w-4" /><span>取引先管理</span></SidebarMenuButton>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader><DialogTitle>取引先管理</DialogTitle></DialogHeader>
@@ -157,7 +163,10 @@ export function SidebarNav() {
                         <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className={`w-3 h-3 rounded-full ${client.color} shrink-0`} />
-                            <span className="text-sm font-medium truncate">{client.name}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium truncate">{client.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{client.clientType === 'prime' ? '元請け' : '下請け'}</span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingClient(client)}><Pencil className="h-4 w-4" /></Button>
@@ -183,7 +192,7 @@ export function SidebarNav() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>取引先を削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>「{clientToDelete?.name}」を削除します。操作は取り消せません。</AlertDialogDescription>
+            <AlertDialogDescription>「{clientToDelete?.name}」を削除します。この取引先に紐づくタスクの表示ができなくなる可能性があります（データ自体は残ります）。操作は取り消せません。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>キャンセル</AlertDialogCancel>

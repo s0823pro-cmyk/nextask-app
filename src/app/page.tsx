@@ -37,6 +37,10 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
+/**
+ * メインダッシュボード画面。
+ * 全体の統計、取引先別のリンク、タスクの検索を表示します。
+ */
 export default function Home() {
   const db = useFirestore()
   const auth = useAuth()
@@ -58,6 +62,7 @@ export default function Home() {
   const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
   const { data: allTasks = [] } = useCollection<Task>(tasksRef);
 
+  // 取引先のソートとフィルタリング
   const sortedClients = React.useMemo(() => {
     return [...(clients || [])].sort((a, b) => {
       const orderA = COLOR_ORDER[a.color] || 99
@@ -104,9 +109,7 @@ export default function Home() {
     }
   }
 
-  const handleDeleteTask = (taskId: string) => {
-    setTaskToDelete(taskId);
-  }
+  const handleDeleteTask = (taskId: string) => setTaskToDelete(taskId)
 
   const confirmDeleteTask = () => {
     if (taskToDelete) {
@@ -167,7 +170,7 @@ export default function Home() {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="検索..." 
+              placeholder="案件名、内容で検索..." 
               className="pl-9 h-11 bg-white border-border/50 shadow-sm" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -226,6 +229,9 @@ export default function Home() {
                 {filteredTasks.map((task) => (
                   <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
                 ))}
+                {filteredTasks.length === 0 && (
+                  <p className="col-span-full text-center py-12 text-muted-foreground">一致するタスクはありません。</p>
+                )}
               </div>
             </CardContent>
           </Card>
