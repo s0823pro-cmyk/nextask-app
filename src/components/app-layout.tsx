@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -91,7 +90,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 if (isLoggingIn) return;
                 setIsLoggingIn(true);
                 const provider = new GoogleAuthProvider();
-                // ログイン画面の選択を強制させる
                 provider.setCustomParameters({ prompt: 'select_account' });
                 
                 try {
@@ -104,15 +102,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   if (error.code === 'auth/popup-blocked') {
                     errorMessage = "ブラウザのポップアップブロックを解除してください。";
                   } else if (error.code === 'auth/unauthorized-domain') {
-                    errorMessage = "このドメインはFirebaseで許可されていません。コンソールの認証設定を確認してください。";
+                    const currentDomain = window.location.hostname;
+                    errorMessage = `このドメイン（${currentDomain}）がFirebaseで許可されていません。Firebaseコンソールの [Authentication] > [設定] > [承認済みドメイン] にこのドメインを追加してください。`;
                   } else if (error.code === 'auth/operation-not-allowed') {
-                    errorMessage = "Googleログインが有効になっていません。Firebaseコンソールで有効にしてください。";
+                    errorMessage = "Googleログインが有効になっていません。Firebaseコンソールの [Authentication] でGoogleを有効にしてください。";
                   }
                   
                   toast({
                     title: "ログイン失敗",
                     description: errorMessage,
-                    variant: "destructive"
+                    variant: "destructive",
+                    duration: 10000,
                   });
                 } finally {
                   setIsLoggingIn(false);
