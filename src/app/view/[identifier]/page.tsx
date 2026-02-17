@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -41,8 +42,10 @@ export default function PublicClientView() {
   }, [])
 
   const tasksQuery = useMemoFirebase(() => {
+    if (!identifier) return null;
     return collection(db, 'client_task_views', identifier, 'tasks');
   }, [db, identifier]);
+  
   const { data: tasksData, isLoading } = useCollection<Task>(tasksQuery);
 
   if (!mounted || isLoading) {

@@ -1,4 +1,5 @@
-import type { Metadata, Viewport } from 'next';
+
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -10,12 +11,6 @@ export const metadata: Metadata = {
   keywords: ['タスク管理', '現場管理', '建築', '工事', '進捗共有'],
   authors: [{ name: 'NexTask Team' }],
   robots: 'index, follow',
-};
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
