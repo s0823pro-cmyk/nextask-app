@@ -1,12 +1,11 @@
-
 "use client"
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, X, Activity, Coins, AlertTriangle, LogIn, Building2, Users } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, LogIn, Building2, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   AlertDialog,

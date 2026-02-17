@@ -1,4 +1,3 @@
-
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'done' | 'awaiting_payment';
 
 export interface TaskPdf {

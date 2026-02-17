@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -44,7 +43,6 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
-import { Badge } from "@/components/ui/badge"
 
 const COLOR_ORDER: Record<string, number> = {
   "bg-blue-500": 1,
