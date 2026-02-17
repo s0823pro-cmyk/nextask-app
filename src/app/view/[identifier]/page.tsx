@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, HardHat, Coins, Download } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, HardHat, Coins, Download, AlertCircle } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,18 +44,28 @@ export default function PublicClientView() {
   }, [])
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!identifier) return null;
+    if (!identifier || !db) return null;
     return collection(db, 'client_task_views', identifier, 'tasks');
   }, [db, identifier]);
   
-  const { data: tasksData, isLoading } = useCollection<Task>(tasksQuery);
+  const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery);
 
+  // マウント前は何も表示しない（ハイドレーション・エラー防止）
   if (!mounted) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  // エラー時の表示
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-bold">アクセスできません</h2>
+          <p className="text-muted-foreground">URLが正しいか、または管理者にお問い合わせください。</p>
+        </div>
       </div>
-    )
+    );
   }
 
   const tasks = Array.isArray(tasksData) ? tasksData : []
@@ -145,9 +155,9 @@ function PublicTaskCard({ task }: { task: Task }) {
     setMounted(true)
   }, [])
 
-  if (!task) return null;
+  if (!task || !mounted) return <div className="h-48 rounded-xl bg-muted/20 animate-pulse" />;
 
-  const config = statusConfig[task.status] || statusConfig.in_progress
+  const config = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.in_progress
   const StatusIcon = config.icon
   
   const formatDateSafe = (dateStr: string | undefined | null) => {
@@ -181,12 +191,16 @@ function PublicTaskCard({ task }: { task: Task }) {
   }
 
   const handleDownloadPdf = (pdfData: string, pdfName: string) => {
-    const link = document.createElement("a");
-    link.href = pdfData;
-    link.download = pdfName || "資料.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const link = document.createElement("a");
+      link.href = pdfData;
+      link.download = pdfName || "資料.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Download failed", e);
+    }
   }
 
   const pdfCount = Array.isArray(task.pdfs) ? task.pdfs.length : 0
@@ -215,7 +229,7 @@ function PublicTaskCard({ task }: { task: Task }) {
       </CardHeader>
       
       <CardContent className="p-4 pt-0 pl-6 flex-1 flex flex-col">
-        <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
+        <p className="text-xs text-muted-foreground line-clamp-3 mb-4 min-h-[3rem]">
           {task.description || "詳細なし"}
         </p>
         

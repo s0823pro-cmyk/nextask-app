@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, RefreshCcw } from 'lucide-react';
 
 export default function Error({
   error,
@@ -13,7 +13,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    console.error("Client-side exception caught:", error);
   }, [error]);
 
   return (
@@ -27,12 +27,13 @@ export default function Error({
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">エラーが発生しました</h1>
           <p className="text-muted-foreground text-sm">
-            申し訳ありません。画面の読み込み中に予期せぬエラーが発生しました。
+            申し訳ありません。画面の読み込み中に問題が発生しました。ブラウザの再読み込みを試すか、ホームに戻ってください。
           </p>
         </div>
         <div className="flex flex-col gap-3">
           <Button onClick={() => reset()} className="w-full">
-            再読み込みを試す
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            再試行する
           </Button>
           <Button variant="outline" asChild className="w-full">
             <a href="/">
@@ -41,9 +42,13 @@ export default function Error({
             </a>
           </Button>
         </div>
-        <div className="pt-4 text-[10px] text-muted-foreground/50 font-mono break-all">
-          {error.message || "Unknown error"}
-        </div>
+        {process.env.NODE_ENV !== 'production' && (
+          <div className="pt-4 text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto border-t">
+            {error.message || "Unknown error"}
+            <br />
+            {error.stack}
+          </div>
+        )}
       </div>
     </div>
   );
