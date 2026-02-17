@@ -32,7 +32,6 @@ import { TaskForm } from "@/components/task-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc, query, where } from "firebase/firestore"
-import { Badge } from "@/components/ui/badge"
 
 /**
  * 取引先別の個別ダッシュボード画面。
@@ -127,6 +126,30 @@ export default function ClientDashboard() {
     (t.constructionType || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const inProgressList = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo');
+  const pendingList = filteredTasks.filter(t => t.status === 'pending');
+  const awaitingPaymentList = filteredTasks.filter(t => t.status === 'awaiting_payment');
+  const doneList = filteredTasks.filter(t => t.status === 'done');
+
+  const renderTaskGrid = (taskList: Task[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {taskList.map((task) => (
+        <TaskCard 
+          key={task.id} 
+          task={task} 
+          onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} 
+          onDelete={handleDeleteTask} 
+          onStatusChange={handleStatusChange} 
+        />
+      ))}
+      {taskList.length === 0 && (
+        <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl text-muted-foreground">
+          タスクが見つかりませんでした。
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -167,49 +190,37 @@ export default function ClientDashboard() {
         />
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="in_progress" className="w-full">
         <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
+          <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressList.length})</TabsTrigger>
+          <TabsTrigger value="pending" className="flex-1">保留 ({pendingList.length})</TabsTrigger>
+          <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentList.length})</TabsTrigger>
+          <TabsTrigger value="done" className="flex-1">完了 ({doneList.length})</TabsTrigger>
           <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
-          <TabsTrigger value="in_progress" className="flex-1">進行中</TabsTrigger>
-          <TabsTrigger value="done" className="flex-1">完了</TabsTrigger>
         </TabsList>
-        <TabsContent value="all" className="mt-6">
+
+        <TabsContent value="in_progress" className="mt-6">
           {isLoading ? (
             <div className="flex justify-center p-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTasks.map((task) => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
-                  onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} 
-                  onDelete={handleDeleteTask} 
-                  onStatusChange={handleStatusChange} 
-                />
-              ))}
-              {filteredTasks.length === 0 && (
-                <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl text-muted-foreground">
-                  タスクが見つかりませんでした。
-                </div>
-              )}
-            </div>
-          )}
+          ) : renderTaskGrid(inProgressList)}
         </TabsContent>
-        <TabsContent value="in_progress" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.filter(t => t.status !== 'done').map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
+
+        <TabsContent value="pending" className="mt-6">
+          {renderTaskGrid(pendingList)}
         </TabsContent>
+
+        <TabsContent value="awaiting_payment" className="mt-6">
+          {renderTaskGrid(awaitingPaymentList)}
+        </TabsContent>
+
         <TabsContent value="done" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.filter(t => t.status === 'done').map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
+          {renderTaskGrid(doneList)}
+        </TabsContent>
+
+        <TabsContent value="all" className="mt-6">
+          {renderTaskGrid(filteredTasks)}
         </TabsContent>
       </Tabs>
 
