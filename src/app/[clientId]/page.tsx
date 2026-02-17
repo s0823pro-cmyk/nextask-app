@@ -94,7 +94,7 @@ export default function ClientDashboard() {
   }
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const task = tasks?.find(t => t.id === taskId);
+    const task = (tasks || [])?.find(t => t.id === taskId);
     if (task && client) {
       saveTaskWithSync(db, { ...task, status, updatedAt: new Date().toISOString() }, client.dedicatedUrlIdentifier);
       toast({ title: "ステータスを更新しました" });
@@ -110,7 +110,7 @@ export default function ClientDashboard() {
     toast({ title: "URLをコピーしました" });
   }
 
-  const filteredTasks = tasks.filter(t => 
+  const filteredTasks = (tasks || []).filter(t => 
     (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (t.description || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
