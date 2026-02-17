@@ -160,7 +160,6 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
-      // クライアントサイドでのみ現在時刻と比較
       return isValid(date) && date.getTime() < new Date().setHours(0,0,0,0)
     } catch {
       return false
