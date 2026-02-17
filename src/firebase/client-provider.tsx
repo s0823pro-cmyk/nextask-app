@@ -5,6 +5,7 @@ import React, { useMemo, useEffect, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { usePathname } from 'next/navigation';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -15,16 +16,17 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []);
 
+  const pathname = usePathname();
+
   useEffect(() => {
     const { auth } = firebaseServices;
     if (!auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // 現在のパスを確認
-      const path = window.location.pathname;
-      const isPublicView = path.startsWith('/view/');
-      
       // 共有ポータルの閲覧時のみ、未ログインであれば匿名ログインを行う
+      // window.location の代わりに next/navigation の usePathname を考慮
+      const isPublicView = pathname?.startsWith('/view/');
+      
       if (!user && isPublicView) {
         signInAnonymously(auth).catch((error) => {
           if (process.env.NODE_ENV !== 'production') {
@@ -35,7 +37,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     });
 
     return () => unsubscribe();
-  }, [firebaseServices]);
+  }, [firebaseServices, pathname]);
 
   return (
     <FirebaseProvider

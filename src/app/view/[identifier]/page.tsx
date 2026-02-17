@@ -45,7 +45,10 @@ export default function PublicClientView() {
   const tasksQuery = useMemoFirebase(() => {
     if (!identifier || !db) return null;
     try {
-      return collection(db, 'client_task_views', identifier, 'tasks');
+      // パスが空でないことを確認
+      const cleanId = String(identifier).trim();
+      if (!cleanId) return null;
+      return collection(db, 'client_task_views', cleanId, 'tasks');
     } catch (e) {
       console.error("Firestore collection error:", e);
       return null;
@@ -240,12 +243,12 @@ function PublicTaskCard({ task }: { task: Task }) {
             </Badge>
           )}
         </div>
-        <CardTitle className="text-lg font-bold line-clamp-2 leading-snug">{task.title}</CardTitle>
+        <CardTitle className="text-lg font-bold line-clamp-2 leading-snug">{(task.title || "").trim() || "無題のタスク"}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 pl-6 flex-1 flex flex-col">
         <p className="text-xs text-muted-foreground line-clamp-3 mb-4 min-h-[3rem] leading-relaxed">
-          {task.description || "詳細説明はありません。"}
+          {(task.description || "").trim() || "詳細説明はありません。"}
         </p>
         
         <Dialog>
@@ -255,9 +258,9 @@ function PublicTaskCard({ task }: { task: Task }) {
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-2xl">
-            <DialogHeader><DialogTitle className="text-xl">{task.title}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="text-xl">{(task.title || "").trim() || "タスク詳細"}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-xl bg-muted/10">
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">{task.description}</div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{(task.description || "").trim() || "詳細説明はありません。"}</div>
             </ScrollArea>
           </DialogContent>
         </Dialog>
