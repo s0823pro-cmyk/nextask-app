@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, AlertCircle, RefreshCcw } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, RefreshCcw, Home } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Error({
@@ -15,12 +15,16 @@ export default function Error({
 }) {
   const pathname = usePathname();
   const [isPublic, setIsPublic] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     console.error("Client-side exception caught:", error);
     // 共有URLかどうかを判定
     setIsPublic(pathname?.startsWith('/view/') || false);
   }, [error, pathname]);
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -32,28 +36,37 @@ export default function Error({
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">エラーが発生しました</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             申し訳ありません。画面の読み込み中に問題が発生しました。ブラウザの再読み込みを試すか、しばらく時間をおいてから再度アクセスしてください。
           </p>
         </div>
-        <div className="flex flex-col gap-3">
-          <Button onClick={() => reset()} className="w-full">
+        <div className="flex flex-col gap-3 pt-4">
+          <Button onClick={() => reset()} className="w-full font-bold shadow-md">
             <RefreshCcw className="mr-2 h-4 w-4" />
             再読み込みしてリトライ
           </Button>
           
           {/* 管理画面へのリンクは、現在のページが共有用でない場合のみ表示 */}
-          {!isPublic && (
-            <Button variant="outline" asChild className="w-full">
+          {!isPublic ? (
+            <Button variant="outline" asChild className="w-full font-bold">
               <a href="/">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
-                ホームに戻る
+                ホーム（管理画面）に戻る
+              </a>
+            </Button>
+          ) : (
+             <Button variant="ghost" asChild className="w-full text-muted-foreground">
+              <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">
+                <Home className="mr-2 h-4 w-4" />
+                トップページへ
               </a>
             </Button>
           )}
         </div>
+        
         {process.env.NODE_ENV !== 'production' && (
-          <div className="pt-4 text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto border-t">
+          <div className="pt-6 mt-6 border-t text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto">
+            <p className="font-bold mb-1">Debug Info:</p>
             {error.message || "Unknown error"}
             <br />
             {error.stack}

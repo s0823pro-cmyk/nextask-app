@@ -61,18 +61,20 @@ export default function PublicClientView() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full border-none shadow-none text-center p-8 space-y-4">
-          <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
-            <AlertCircle className="h-6 w-6 text-destructive" />
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
+        <Card className="max-w-md w-full border shadow-xl p-8 space-y-6 rounded-2xl">
+          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-destructive" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold">アクセス権限がありません</h2>
-            <p className="text-muted-foreground text-sm">
-              このURLは無効であるか、閲覧期限が切れている可能性があります。
+            <h2 className="text-2xl font-bold">アクセスできません</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              このURLは無効であるか、閲覧権限が制限されています。正しいURLを使用しているかご確認ください。
             </p>
           </div>
-          <Button variant="outline" onClick={() => window.location.reload()}>再読み込みしてリトライ</Button>
+          <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
+            再読み込みしてリトライ
+          </Button>
         </Card>
       </div>
     );
@@ -112,7 +114,7 @@ export default function PublicClientView() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="案件名などで検索..." 
-              className="pl-9 h-11 bg-white border-border/50" 
+              className="pl-9 h-11 bg-white border-border/50 shadow-sm" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -133,41 +135,28 @@ export default function PublicClientView() {
               <TabsTrigger value="all" className="flex-1 py-2">すべて ({filteredTasks.length})</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="in_progress" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {inProgressTasks.map((task) => (
-                  <PublicTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="pending" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {pendingTasks.map((task) => (
-                  <PublicTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="awaiting_payment" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {awaitingPaymentTasks.map((task) => (
-                  <PublicTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="done" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {doneTasks.map((task) => (
-                  <PublicTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="all" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {filteredTasks.map((task) => (
-                  <PublicTaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            </TabsContent>
+            <div className="mt-6">
+              {[
+                { value: "in_progress", list: inProgressTasks },
+                { value: "pending", list: pendingTasks },
+                { value: "awaiting_payment", list: awaitingPaymentTasks },
+                { value: "done", list: doneTasks },
+                { value: "all", list: filteredTasks }
+              ].map(group => (
+                <TabsContent key={group.value} value={group.value} className="mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {group.list.map((task) => (
+                      <PublicTaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                  {group.list.length === 0 && (
+                    <div className="text-center py-20 border-2 border-dashed rounded-2xl text-muted-foreground">
+                      該当するタスクはありません。
+                    </div>
+                  )}
+                </TabsContent> group.list.length > 0 && 
+              ))}
+            </div>
           </Tabs>
         )}
       </div>
@@ -217,12 +206,12 @@ function PublicTaskCard({ task }: { task: Task }) {
       
       <CardHeader className="p-4 pb-2">
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] border-none", config.color)}>
+          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] border-none font-bold", config.color)}>
             <StatusIcon className="w-3 h-3 mr-1" />
             {config.label}
           </Badge>
           {task.constructionType && (
-            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700 border-none">
+            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700 border-none font-bold">
               <HardHat className="w-3 h-3 mr-1" />
               {task.constructionType}
             </Badge>
@@ -240,9 +229,9 @@ function PublicTaskCard({ task }: { task: Task }) {
           <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
             <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
           </button>
-          <DialogContent className="sm:max-w-[600px] w-[95vw]">
-            <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
-            <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md bg-muted/10">
+          <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-2xl">
+            <DialogHeader><DialogTitle className="text-xl">{task.title}</DialogTitle></DialogHeader>
+            <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-xl bg-muted/10">
               <div className="text-sm whitespace-pre-wrap leading-relaxed">{task.description}</div>
             </ScrollArea>
           </DialogContent>
@@ -251,15 +240,15 @@ function PublicTaskCard({ task }: { task: Task }) {
         <div className="space-y-3 mt-auto border-t border-border/50 pt-4">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <p className="text-[9px] font-bold text-muted-foreground uppercase">受付日</p>
-              <div className="text-[11px] text-foreground flex items-center gap-1.5">
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">受付日</p>
+              <div className="text-[11px] text-foreground flex items-center gap-1.5 font-medium">
                 <FileText className="w-3 h-3 opacity-50" />
                 {formatDateSafe(task.receptionDate)}
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-[9px] font-bold text-muted-foreground uppercase">期日</p>
-              <div className={cn("text-[11px] flex items-center gap-1.5 p-1 -ml-1 rounded", isOverdue ? "text-destructive font-bold bg-destructive/5" : "text-foreground")}>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">期日</p>
+              <div className={cn("text-[11px] flex items-center gap-1.5 p-1 -ml-1 rounded font-medium", isOverdue ? "text-destructive font-bold bg-destructive/5" : "text-foreground")}>
                 <Calendar className="w-3 h-3 opacity-50" />
                 {formatDateSafe(task.dueDate)}
               </div>
@@ -275,10 +264,13 @@ function PublicTaskCard({ task }: { task: Task }) {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 text-[10px] h-9 justify-start px-3 bg-muted/30 border-border/50 overflow-hidden" 
+                      className="flex-1 text-[10px] h-9 justify-start px-3 bg-muted/30 border-border/50 overflow-hidden font-bold" 
                       onClick={() => {
                         const win = window.open();
-                        if (win) win.document.write(`<iframe width='100%' height='100%' src='${pdf.data}'></iframe>`);
+                        if (win) {
+                          win.document.write(`<iframe width='100%' height='100%' src='${pdf.data}'></iframe>`);
+                          win.document.title = pdf.name;
+                        }
                       }}
                     >
                       <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-50" />
@@ -287,8 +279,9 @@ function PublicTaskCard({ task }: { task: Task }) {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9 shrink-0 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
-                      onClick={() => {
+                      className="h-9 w-9 shrink-0 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const a = document.createElement("a");
                         a.href = pdf.data;
                         a.download = pdf.name;
