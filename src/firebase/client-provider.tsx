@@ -20,10 +20,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     if (!auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // 共有ポータルの閲覧時のみ、未ログインであれば匿名ログインを行う
-      // これにより管理者ログイン画面での干渉を防ぐ
-      const isPublicView = window.location.pathname.startsWith('/view/');
+      // 現在のパスを確認
+      const path = window.location.pathname;
+      const isPublicView = path.startsWith('/view/');
       
+      // 共有ポータルの閲覧時のみ、未ログインであれば匿名ログインを行う
       if (!user && isPublicView) {
         signInAnonymously(auth).catch((error) => {
           if (process.env.NODE_ENV !== 'production') {

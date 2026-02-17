@@ -20,7 +20,7 @@ export default function Error({
   useEffect(() => {
     setMounted(true);
     console.error("Client-side exception caught:", error);
-    // 共有URLかどうかを判定
+    // 共有URLかどうかを判定 (/view/ で始まる場合はパブリック)
     setIsPublic(pathname?.startsWith('/view/') || false);
   }, [error, pathname]);
 
@@ -47,20 +47,19 @@ export default function Error({
           </Button>
           
           {/* 管理画面へのリンクは、現在のページが共有用でない場合のみ表示 */}
-          {!isPublic ? (
+          {!isPublic && (
             <Button variant="outline" asChild className="w-full font-bold">
               <a href="/">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 ホーム（管理画面）に戻る
               </a>
             </Button>
-          ) : (
-             <Button variant="ghost" asChild className="w-full text-muted-foreground">
-              <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">
-                <Home className="mr-2 h-4 w-4" />
-                トップページへ
-              </a>
-            </Button>
+          )}
+
+          {isPublic && (
+            <p className="text-xs text-muted-foreground pt-4">
+              ※解決しない場合は、共有されたURLが正しいか発行元にご確認ください。
+            </p>
           )}
         </div>
         

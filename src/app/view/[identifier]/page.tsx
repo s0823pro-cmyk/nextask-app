@@ -44,7 +44,12 @@ export default function PublicClientView() {
 
   const tasksQuery = useMemoFirebase(() => {
     if (!identifier || !db) return null;
-    return collection(db, 'client_task_views', identifier, 'tasks');
+    try {
+      return collection(db, 'client_task_views', identifier, 'tasks');
+    } catch (e) {
+      console.error("Firestore collection error:", e);
+      return null;
+    }
   }, [db, identifier]);
   
   const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery, { 
@@ -59,7 +64,7 @@ export default function PublicClientView() {
     );
   }
 
-  if (error) {
+  if (error || (!isLoading && !tasksData && identifier)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
         <Card className="max-w-md w-full border shadow-xl p-8 space-y-6 rounded-2xl">
@@ -136,30 +141,48 @@ export default function PublicClientView() {
             </TabsList>
 
             <div className="mt-6">
-              {[
-                { value: "in_progress", list: inProgressTasks },
-                { value: "pending", list: pendingTasks },
-                { value: "awaiting_payment", list: awaitingPaymentTasks },
-                { value: "done", list: doneTasks },
-                { value: "all", list: filteredTasks }
-              ].map(group => (
-                <TabsContent key={group.value} value={group.value} className="mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {group.list.map((task) => (
-                      <PublicTaskCard key={task.id} task={task} />
-                    ))}
-                  </div>
-                  {group.list.length === 0 && (
-                    <div className="text-center py-20 border-2 border-dashed rounded-2xl text-muted-foreground">
-                      該当するタスクはありません。
-                    </div>
-                  )}
-                </TabsContent>
-              ))}
+              <TabsContent value="in_progress" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {inProgressTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
+                </div>
+                {inProgressTasks.length === 0 && <EmptyState />}
+              </TabsContent>
+              <TabsContent value="pending" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {pendingTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
+                </div>
+                {pendingTasks.length === 0 && <EmptyState />}
+              </TabsContent>
+              <TabsContent value="awaiting_payment" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {awaitingPaymentTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
+                </div>
+                {awaitingPaymentTasks.length === 0 && <EmptyState />}
+              </TabsContent>
+              <TabsContent value="done" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {doneTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
+                </div>
+                {doneTasks.length === 0 && <EmptyState />}
+              </TabsContent>
+              <TabsContent value="all" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {filteredTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
+                </div>
+                {filteredTasks.length === 0 && <EmptyState />}
+              </TabsContent>
             </div>
           </Tabs>
         )}
       </div>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="text-center py-20 border-2 border-dashed rounded-2xl text-muted-foreground">
+      該当するタスクはありません。
     </div>
   )
 }
@@ -174,7 +197,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   const StatusIcon = config.icon
   
   const formatDateSafe = (dateStr: string | undefined | null) => {
-    if (!dateStr || !mounted) return "-"
+    if (!dateStr) return "-"
     try {
       const date = parseISO(dateStr)
       return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
@@ -184,7 +207,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   }
 
   const isOverdue = React.useMemo(() => {
-    if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
+    if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
       if (!isValid(date)) return false
@@ -194,7 +217,7 @@ function PublicTaskCard({ task }: { task: Task }) {
     } catch {
       return false
     }
-  }, [task.dueDate, task.status, mounted])
+  }, [task.dueDate, task.status])
 
   const pdfCount = Array.isArray(task.pdfs) ? task.pdfs.length : 0
 
