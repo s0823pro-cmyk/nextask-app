@@ -45,11 +45,9 @@ export default function PublicClientView() {
 
   const tasksQuery = useMemoFirebase(() => {
     if (!identifier || !db) return null;
-    // セキュリティルールに合わせてパスを正確に指定
     return collection(db, 'client_task_views', identifier, 'tasks');
   }, [db, identifier]);
   
-  // 共有ポータルではグローバルなエラー画面（クラッシュ）を避け、コンポーネント内でエラーを表示する
   const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery, { 
     suppressGlobalError: true 
   });
@@ -62,7 +60,6 @@ export default function PublicClientView() {
     );
   }
 
-  // 権限エラー等が発生した場合は、クラッシュさせずに専用のメッセージを出す
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -73,7 +70,7 @@ export default function PublicClientView() {
           <div className="space-y-2">
             <h2 className="text-xl font-bold">アクセス権限がありません</h2>
             <p className="text-muted-foreground text-sm">
-              このURLは無効であるか、閲覧期限が切れている可能性があります。管理者にお問い合わせください。
+              このURLは無効であるか、閲覧期限が切れている可能性があります。
             </p>
           </div>
           <Button variant="outline" onClick={() => window.location.reload()}>再読み込みしてリトライ</Button>
@@ -93,10 +90,10 @@ export default function PublicClientView() {
            (t.constructionType || "").toLowerCase().includes(searchLower);
   });
 
-  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
-  const awaitingPaymentTasks = filteredTasks.filter(t => t.status === 'awaiting_payment')
-  const doneTasks = filteredTasks.filter(t => t.status === 'done')
+  const inProgressTasks = filteredTasks.filter(t => t?.status === 'in_progress' || t?.status === 'todo')
+  const pendingTasks = filteredTasks.filter(t => t?.status === 'pending')
+  const awaitingPaymentTasks = filteredTasks.filter(t => t?.status === 'awaiting_payment')
+  const doneTasks = filteredTasks.filter(t => t?.status === 'done')
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -137,23 +134,41 @@ export default function PublicClientView() {
               <TabsTrigger value="all" className="flex-1 py-2">すべて ({filteredTasks.length})</TabsTrigger>
             </TabsList>
 
-            {["in_progress", "pending", "awaiting_payment", "done", "all"].map((val) => {
-              const list = val === "all" ? filteredTasks : val === "in_progress" ? inProgressTasks : val === "pending" ? pendingTasks : val === "awaiting_payment" ? awaitingPaymentTasks : doneTasks
-              return (
-                <TabsContent key={val} value={val} className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {list.map((task) => (
-                      <PublicTaskCard key={task.id} task={task} />
-                    ))}
-                  </div>
-                  {list.length === 0 && (
-                    <div className="text-center py-24 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
-                      <p className="text-muted-foreground">表示できるタスクはありません。</p>
-                    </div>
-                  )}
-                </TabsContent>
-              )
-            })}
+            <TabsContent value="in_progress" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {inProgressTasks.map((task) => (
+                  <PublicTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="pending" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {pendingTasks.map((task) => (
+                  <PublicTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="awaiting_payment" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {awaitingPaymentTasks.map((task) => (
+                  <PublicTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="done" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {doneTasks.map((task) => (
+                  <PublicTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="all" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {filteredTasks.map((task) => (
+                  <PublicTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            </TabsContent>
           </Tabs>
         )}
       </div>
@@ -224,20 +239,14 @@ function PublicTaskCard({ task }: { task: Task }) {
         
         <Dialog>
           <DialogTrigger asChild>
-            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline">
-              <Eye className="w-3 h-3" /> 内容を詳しく見る
+            <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline text-left">
+              <Eye className="w-3 h-3 inline mr-1" /> 内容を詳しく見る
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] w-[95vw]">
             <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md bg-muted/10">
               <div className="text-sm whitespace-pre-wrap leading-relaxed">{task.description}</div>
-              {task.constructionType && (
-                <div className="mt-6 pt-4 border-t border-border/50">
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wider">工事区分</p>
-                  <p className="text-sm font-medium">{task.constructionType}</p>
-                </div>
-              )}
             </ScrollArea>
           </DialogContent>
         </Dialog>
@@ -252,7 +261,7 @@ function PublicTaskCard({ task }: { task: Task }) {
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-[9px] font-bold text-muted-foreground uppercase">完了予定日</p>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase">期日</p>
               <div className={cn("text-[11px] flex items-center gap-1.5 p-1 -ml-1 rounded", isOverdue ? "text-destructive font-bold bg-destructive/5" : "text-foreground")}>
                 <Calendar className="w-3 h-3 opacity-50" />
                 {formatDateSafe(task.dueDate)}

@@ -193,7 +193,7 @@ export default function ClientDashboard() {
         <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
           <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressList.length})</TabsTrigger>
           <TabsTrigger value="pending" className="flex-1">保留 ({pendingList.length})</TabsTrigger>
-          <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
+          <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentList.length})</TabsTrigger>
           <TabsTrigger value="done" className="flex-1">完了 ({doneList.length})</TabsTrigger>
           <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
         </TabsList>
