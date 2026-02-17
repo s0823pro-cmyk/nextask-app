@@ -134,14 +134,19 @@ function PublicTaskCard({ task }: { task: Task }) {
   
   const formatDateSafe = (dateStr: string | undefined) => {
     if (!dateStr) return "-"
-    const date = parseISO(dateStr)
-    return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
+    try {
+      const date = parseISO(dateStr)
+      return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
+    } catch {
+      return "-"
+    }
   }
 
   const isOverdue = React.useMemo(() => {
     if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
-      return new Date(task.dueDate) < new Date()
+      const date = new Date(task.dueDate)
+      return isValid(date) && date < new Date()
     } catch {
       return false
     }

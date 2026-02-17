@@ -1,7 +1,7 @@
 
 "use client"
 
-import { format } from "date-fns"
+import { format, isValid, parseISO } from "date-fns"
 import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -35,7 +35,26 @@ const statusConfig = {
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
   const { label, color, icon: StatusIcon } = statusConfig[task.status] || statusConfig.in_progress
-  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done' && task.status !== 'awaiting_payment'
+  
+  const formatDateSafe = (dateStr: string | undefined) => {
+    if (!dateStr) return "-"
+    try {
+      const date = parseISO(dateStr)
+      return isValid(date) ? format(date, "yyyy/MM/dd") : "-"
+    } catch {
+      return "-"
+    }
+  }
+
+  const isOverdue = (() => {
+    if (task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
+    try {
+      const date = new Date(task.dueDate)
+      return isValid(date) && date < new Date()
+    } catch {
+      return false
+    }
+  })()
 
   const handleViewPdf = (pdfData: string, pdfName: string) => {
     const newWindow = window.open();
@@ -123,14 +142,14 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
           <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
             <div className="flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 opacity-50" />
-              <span>受付: {task.receptionDate ? format(new Date(task.receptionDate), "yyyy/MM/dd") : "-"}</span>
+              <span>受付: {formatDateSafe(task.receptionDate)}</span>
             </div>
             <div className={cn(
               "flex items-center gap-1 px-1.5 py-0.5 rounded",
               isOverdue ? "text-destructive bg-destructive/5 font-bold" : "text-muted-foreground"
             )}>
               <Calendar className="w-3.5 h-3.5 opacity-50" />
-              <span>期日: {format(new Date(task.dueDate), "yyyy/MM/dd")}</span>
+              <span>期日: {formatDateSafe(task.dueDate)}</span>
             </div>
           </div>
         </div>
