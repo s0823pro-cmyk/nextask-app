@@ -3,9 +3,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, LogIn, Building2, Users, Lock } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -19,14 +18,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Client, Task, TaskStatus } from "@/lib/types"
-import { useFirestore, useCollection, useMemoFirebase, useAuth, useUser } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { TaskCard } from "@/components/task-card"
 import { toast } from "@/hooks/use-toast"
 import { saveTaskWithSync, deleteTaskWithSync } from "@/lib/task-service"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
-import { initiateGoogleSignIn } from "@/firebase/non-blocking-login"
 
 const COLOR_ORDER: Record<string, number> = {
   "bg-blue-500": 1,
@@ -39,8 +37,6 @@ const COLOR_ORDER: Record<string, number> = {
 
 export default function Home() {
   const db = useFirestore()
-  const auth = useAuth()
-  const { user, isUserLoading } = useUser()
   
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
@@ -121,33 +117,7 @@ export default function Home() {
     setIsEditOpen(true);
   }
 
-  if (!mounted || isUserLoading) return (
-    <div className="flex-1 flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
-
-  // 管理者権限チェック（匿名ユーザーは管理画面を見れない）
-  if (user?.isAnonymous) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <div className="bg-muted p-6 rounded-2xl border max-w-sm space-y-4">
-          <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto">
-            <Lock className="h-6 w-6 text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold">管理画面へのアクセス制限</h2>
-            <p className="text-muted-foreground text-sm">
-              管理画面を閲覧するには、管理者アカウントでのログインが必要です。
-            </p>
-          </div>
-          <Button onClick={() => initiateGoogleSignIn(auth)} className="w-full">
-            <LogIn className="mr-2 h-4 w-4" /> Googleで管理者ログイン
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   const renderClientGrid = (clientList: Client[]) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
