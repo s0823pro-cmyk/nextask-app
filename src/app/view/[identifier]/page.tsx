@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink, HardHat, Coins } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, ExternalLink, HardHat, Coins, Download } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +32,10 @@ const statusConfig = {
   done: { label: "完了", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 }
 
+/**
+ * 取引先向け公開ポータル画面。
+ * 管理画面で追加されたタスクやPDF資料を閲覧・ダウンロードできます。
+ */
 export default function PublicClientView() {
   const { identifier } = useParams<{ identifier: string }>()
   const db = useFirestore()
@@ -65,25 +69,9 @@ export default function PublicClientView() {
     const description = (t.description || "").toLowerCase();
     const constructionType = (t.constructionType || "").toLowerCase();
     
-    const matchText = title.includes(searchLower) || 
-                     description.includes(searchLower) ||
-                     constructionType.includes(searchLower);
-    
-    if (matchText) return true;
-
-    const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
-    const dateParts = normalizedSearch.split('-');
-    const paddedSearch = dateParts.map(part => {
-      if (/^\d{1,2}$/.test(part)) {
-        return part.padStart(2, '0');
-      }
-      return part;
-    }).join('-');
-
-    return (t.receptionDate || "").includes(paddedSearch) || 
-           (t.dueDate || "").includes(paddedSearch) ||
-           (t.receptionDate || "").includes(normalizedSearch) ||
-           (t.dueDate || "").includes(normalizedSearch);
+    return title.includes(searchLower) || 
+           description.includes(searchLower) ||
+           constructionType.includes(searchLower);
   });
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
@@ -170,6 +158,15 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }
 
+  const handleDownloadPdf = (pdfData: string, pdfName: string) => {
+    const link = document.createElement("a");
+    link.href = pdfData;
+    link.download = pdfName || "資料.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const pdfCount = task.pdfs?.length || 0
 
   return (
@@ -235,19 +232,26 @@ function PublicTaskCard({ task }: { task: Task }) {
               <p className="text-[9px] font-bold text-muted-foreground ml-1">添付資料:</p>
               <div className="flex flex-col gap-1">
                 {task.pdfs?.map((pdf, idx) => (
-                  <Button 
-                    key={idx}
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full text-[10px] h-8 justify-between px-3" 
-                    onClick={() => handleViewPdf(pdf.data, pdf.name)}
-                  >
-                    <div className="flex items-center truncate mr-2">
+                  <div key={idx} className="flex gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 text-[10px] h-8 justify-start px-3 overflow-hidden" 
+                      onClick={() => handleViewPdf(pdf.data, pdf.name)}
+                    >
                       <Paperclip className="w-3 h-3 mr-2 shrink-0" />
                       <span className="truncate">{pdf.name}</span>
-                    </div>
-                    <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
-                  </Button>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 bg-primary/5 text-primary hover:bg-primary/10"
+                      onClick={() => handleDownloadPdf(pdf.data, pdf.name)}
+                      title="ダウンロード"
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
