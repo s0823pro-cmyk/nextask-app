@@ -1,3 +1,4 @@
+
 # NexTask - 本番公開（デプロイ）完全ガイド
 
 ## ⚠️ 「安全ではないサイト」と表示される場合
@@ -21,7 +22,7 @@
 ### 1. 変更を保存する
 ```bash
 git add .
-git commit -m "update layout and features"
+git commit -m "final version with grouping"
 ```
 
 ### 2. GitHubに送信する
