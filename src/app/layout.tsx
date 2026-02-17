@@ -6,8 +6,12 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AppLayout } from '@/components/app-layout';
 
 export const metadata: Metadata = {
-  title: 'NexTask | スマートなタスク管理',
-  description: 'AI搭載の効率的なタスク管理プラットフォーム',
+  title: 'NexTask | スマートな建築・工事タスク管理',
+  description: '現場の進捗をリアルタイムで共有。取引先別の専用ポータルで透明性の高い業務フローを実現。',
+  keywords: ['タスク管理', '現場管理', '建築', '工事', '進捗共有'],
+  authors: [{ name: 'NexTask Team' }],
+  viewport: 'width=device-width, initial-scale=1',
+  robots: 'index, follow',
 };
 
 export default function RootLayout({
