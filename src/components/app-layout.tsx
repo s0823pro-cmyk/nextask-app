@@ -8,16 +8,18 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { Button } from '@/components/ui/button';
-import { Lock, LogIn, LayoutDashboard, AlertCircle } from 'lucide-react';
+import { Lock, LogIn, LayoutDashboard, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
-// 管理者として許可するメールアドレスをここに設定してください
-const ALLOWED_ADMINS = ["YOUR_EMAIL@gmail.com"];
+// ⚠️ 重要：ここに管理者のGoogleメールアドレスを入力してください
+const ALLOWED_ADMINS = ["[あなたのメールアドレス@gmail.com]"];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const [mounted, setMounted] = React.useState(false);
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
@@ -41,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -55,7 +57,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-md w-full space-y-8 bg-card p-8 rounded-2xl border shadow-xl">
           <div className="flex justify-center">
             <div className="bg-primary/10 p-4 rounded-full">
-              {user && !user.isAnonymous ? <AlertCircle className="h-12 w-12 text-destructive" /> : <Lock className="h-12 w-12 text-primary" />}
+              {user && !user.isAnonymous ? (
+                <AlertCircle className="h-12 w-12 text-destructive" />
+              ) : (
+                <Lock className="h-12 w-12 text-primary" />
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -68,17 +74,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {user && !user.isAnonymous 
-                ? `アカウント（${user.email}）には管理者権限がありません。管理者用のアカウントで再度ログインしてください。`
-                : '管理画面にアクセスするには管理者アカウントでの認証が必要です。登録済みのGoogleアカウントでログインしてください。'}
+                ? `現在のアカウント（${user.email}）には管理者権限がありません。許可されたメールアドレスでログインしてください。`
+                : '管理画面にアクセスするには管理者アカウントでの認証が必要です。'}
             </p>
           </div>
           <div className="pt-4">
             <Button 
               size="lg" 
               className="w-full font-bold shadow-md transition-all active:scale-95" 
-              onClick={() => initiateGoogleSignIn(auth)}
+              disabled={isLoggingIn}
+              onClick={async () => {
+                setIsLoggingIn(true);
+                try {
+                  await initiateGoogleSignIn(auth);
+                } catch (error) {
+                  toast({
+                    title: "ログインエラー",
+                    description: "ポップアップがブロックされた可能性があります。ブラウザの設定を確認してください。",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setIsLoggingIn(false);
+                }
+              }}
             >
-              <LogIn className="mr-2 h-5 w-5" /> 
+              {isLoggingIn ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <LogIn className="mr-2 h-5 w-5" />
+              )}
               {user && !user.isAnonymous ? '別のアカウントでログイン' : 'Googleでログイン'}
             </Button>
           </div>
@@ -88,6 +112,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </Button>
           )}
         </div>
+        <p className="mt-8 text-[10px] text-muted-foreground">
+          ※ ログイン画面が表示されない場合は、ブラウザのアドレスバーにあるポップアップブロック解除を許可してください。
+        </p>
       </div>
     );
   }
