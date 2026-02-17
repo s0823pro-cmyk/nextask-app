@@ -27,11 +27,18 @@ export interface UseCollectionResult<T> {
 }
 
 /**
+ * Options for the useCollection hook.
+ */
+export interface UseCollectionOptions {
+  suppressGlobalError?: boolean; // If true, don't emit to global error listener.
+}
+
+/**
  * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries safely to prevent client-side crashes.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: (CollectionReference<DocumentData> | Query<DocumentData>) | null | undefined,
+    options: UseCollectionOptions = {}
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -41,7 +48,6 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // ターゲットが指定されていない場合は何もしない（安全に復帰）
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -64,21 +70,17 @@ export function useCollection<T = any>(
           setError(null);
           setIsLoading(false);
         } catch (e) {
-          console.error("Error processing snapshot data:", e);
           setError(e as Error);
           setIsLoading(false);
         }
       },
       (err: FirestoreError) => {
-        // 開発環境と本番環境の両方でエラーをコンソールに表示
-        console.error("Firestore onSnapshot error:", err);
-        
         setError(err);
         setData([]);
         setIsLoading(false);
 
-        // 権限エラー（permission-denied）の場合のみグローバル通知を発火
-        if (err.code === 'permission-denied') {
+        // 権限エラーの場合、オプションが有効でなければグローバル通知を発火
+        if (err.code === 'permission-denied' && !options.suppressGlobalError) {
           let path = "unknown";
           try {
             path = (memoizedTargetRefOrQuery as any).path || (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString() || "query";
@@ -94,7 +96,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery, options.suppressGlobalError]);
 
   return { data, isLoading, error };
 }

@@ -45,28 +45,39 @@ export default function PublicClientView() {
 
   const tasksQuery = useMemoFirebase(() => {
     if (!identifier || !db) return null;
+    // セキュリティルールに合わせてパスを正確に指定
     return collection(db, 'client_task_views', identifier, 'tasks');
   }, [db, identifier]);
   
-  const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery);
+  // 共有ポータルではグローバルなエラー画面（クラッシュ）を避け、コンポーネント内でエラーを表示する
+  const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery, { 
+    suppressGlobalError: true 
+  });
 
-  // ハイドレーションエラーを完全に防ぐため、マウントされるまで何も描画しない
   if (!mounted) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  // エラー時の安全な表示
+  // 権限エラー等が発生した場合は、クラッシュさせずに専用のメッセージを出す
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center space-y-4 max-w-md">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold">アクセスできません</h2>
-          <p className="text-muted-foreground text-sm">URLが正しいか確認してください。問題が解決しない場合は、管理者にお問い合わせください。</p>
-          <Button variant="outline" onClick={() => window.location.reload()}>再読み込み</Button>
-        </div>
+        <Card className="max-w-md w-full border-none shadow-none text-center p-8 space-y-4">
+          <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold">アクセス権限がありません</h2>
+            <p className="text-muted-foreground text-sm">
+              このURLは無効であるか、閲覧期限が切れている可能性があります。管理者にお問い合わせください。
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => window.location.reload()}>再読み込みしてリトライ</Button>
+        </Card>
       </div>
     );
   }
@@ -77,14 +88,9 @@ export default function PublicClientView() {
     if (!t) return false;
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return true;
-
-    const title = (t.title || "").toLowerCase();
-    const description = (t.description || "").toLowerCase();
-    const constructionType = (t.constructionType || "").toLowerCase();
-    
-    return title.includes(searchLower) || 
-           description.includes(searchLower) ||
-           constructionType.includes(searchLower);
+    return (t.title || "").toLowerCase().includes(searchLower) || 
+           (t.description || "").toLowerCase().includes(searchLower) ||
+           (t.constructionType || "").toLowerCase().includes(searchLower);
   });
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
@@ -109,8 +115,8 @@ export default function PublicClientView() {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="検索..." 
-              className="pl-9 h-11 bg-white" 
+              placeholder="案件名などで検索..." 
+              className="pl-9 h-11 bg-white border-border/50" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -123,12 +129,12 @@ export default function PublicClientView() {
           </div>
         ) : (
           <Tabs defaultValue="in_progress" className="w-full">
-            <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
-              <TabsTrigger value="in_progress" className="flex-1">進行中 ({inProgressTasks.length})</TabsTrigger>
-              <TabsTrigger value="pending" className="flex-1">保留 ({pendingTasks.length})</TabsTrigger>
-              <TabsTrigger value="awaiting_payment" className="flex-1">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
-              <TabsTrigger value="done" className="flex-1">完了 ({doneTasks.length})</TabsTrigger>
-              <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
+            <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto h-12 p-1">
+              <TabsTrigger value="in_progress" className="flex-1 py-2">進行中 ({inProgressTasks.length})</TabsTrigger>
+              <TabsTrigger value="pending" className="flex-1 py-2">保留 ({pendingTasks.length})</TabsTrigger>
+              <TabsTrigger value="awaiting_payment" className="flex-1 py-2">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
+              <TabsTrigger value="done" className="flex-1 py-2">完了 ({doneTasks.length})</TabsTrigger>
+              <TabsTrigger value="all" className="flex-1 py-2">すべて ({filteredTasks.length})</TabsTrigger>
             </TabsList>
 
             {["in_progress", "pending", "awaiting_payment", "done", "all"].map((val) => {
@@ -140,7 +146,11 @@ export default function PublicClientView() {
                       <PublicTaskCard key={task.id} task={task} />
                     ))}
                   </div>
-                  {list.length === 0 && <EmptyState isSearching={!!searchQuery} />}
+                  {list.length === 0 && (
+                    <div className="text-center py-24 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
+                      <p className="text-muted-foreground">表示できるタスクはありません。</p>
+                    </div>
+                  )}
                 </TabsContent>
               )
             })}
@@ -153,10 +163,7 @@ export default function PublicClientView() {
 
 function PublicTaskCard({ task }: { task: Task }) {
   const [mounted, setMounted] = React.useState(false)
-  
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  React.useEffect(() => { setMounted(true) }, [])
 
   if (!task || !mounted) return <div className="h-48 rounded-xl bg-muted/20 animate-pulse" />;
 
@@ -167,8 +174,7 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!dateStr || !mounted) return "-"
     try {
       const date = parseISO(dateStr)
-      if (!isValid(date)) return "-"
-      return format(date, "yyyy年MM月dd日")
+      return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
     } catch {
       return "-"
     }
@@ -187,110 +193,103 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }, [task.dueDate, task.status, mounted])
 
-  const handleViewPdf = (pdfData: string, pdfName: string) => {
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(`<iframe width='100%' height='100%' src='${pdfData}'></iframe>`);
-      newWindow.document.title = pdfName || "資料";
-    }
-  }
-
-  const handleDownloadPdf = (pdfData: string, pdfName: string) => {
-    try {
-      const link = document.createElement("a");
-      link.href = pdfData;
-      link.download = pdfName || "資料.pdf";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (e) {
-      console.error("Download failed", e);
-    }
-  }
-
   const pdfCount = Array.isArray(task.pdfs) ? task.pdfs.length : 0
 
   return (
-    <Card className="border-border/50 relative flex flex-col group overflow-hidden bg-card">
+    <Card className="border-border/50 relative flex flex-col group overflow-hidden bg-card hover:shadow-md transition-shadow">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
         task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : task.status === 'awaiting_payment' ? "bg-amber-500" : "bg-blue-500"
       )} />
       
       <CardHeader className="p-4 pb-2">
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px]", config.color)}>
+          <Badge variant="outline" className={cn("px-2 py-0.5 text-[10px] border-none", config.color)}>
             <StatusIcon className="w-3 h-3 mr-1" />
             {config.label}
           </Badge>
           {task.constructionType && (
-            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700">
+            <Badge variant="secondary" className="px-2 py-0.5 text-[10px] bg-blue-50 text-blue-700 border-none">
               <HardHat className="w-3 h-3 mr-1" />
               {task.constructionType}
             </Badge>
           )}
-          {pdfCount > 0 && <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">資料 {pdfCount}件</Badge>}
         </div>
-        <CardTitle className="text-lg font-bold line-clamp-2">{task.title}</CardTitle>
+        <CardTitle className="text-lg font-bold line-clamp-2 leading-snug">{task.title}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 pl-6 flex-1 flex flex-col">
-        <p className="text-xs text-muted-foreground line-clamp-3 mb-4 min-h-[3rem]">
-          {task.description || "詳細なし"}
+        <p className="text-xs text-muted-foreground line-clamp-3 mb-4 min-h-[3rem] leading-relaxed">
+          {task.description || "詳細説明はありません。"}
         </p>
         
         <Dialog>
           <DialogTrigger asChild>
             <button className="text-primary text-[11px] font-bold flex items-center gap-1 mb-4 hover:underline">
-              <Eye className="w-3 h-3" /> 全文を確認
+              <Eye className="w-3 h-3" /> 内容を詳しく見る
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] w-[95vw] bg-white">
+          <DialogContent className="sm:max-w-[600px] w-[95vw]">
             <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md bg-muted/10">
-              <div className="text-sm whitespace-pre-wrap">{task.description}</div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{task.description}</div>
               {task.constructionType && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs font-bold text-muted-foreground mb-1">工事内容</p>
-                  <p className="text-sm">{task.constructionType}</p>
+                <div className="mt-6 pt-4 border-t border-border/50">
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wider">工事区分</p>
+                  <p className="text-sm font-medium">{task.constructionType}</p>
                 </div>
               )}
             </ScrollArea>
           </DialogContent>
         </Dialog>
         
-        <div className="space-y-3 mt-auto">
-          <div className="space-y-1.5">
-            <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-              <FileText className="w-3 h-3" /> 受付: {formatDateSafe(task.receptionDate)}
+        <div className="space-y-3 mt-auto border-t border-border/50 pt-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <p className="text-[9px] font-bold text-muted-foreground uppercase">受付日</p>
+              <div className="text-[11px] text-foreground flex items-center gap-1.5">
+                <FileText className="w-3 h-3 opacity-50" />
+                {formatDateSafe(task.receptionDate)}
+              </div>
             </div>
-            <div className={cn("text-[10px] flex items-center gap-2 p-1.5 rounded", isOverdue ? "bg-destructive/5 text-destructive font-bold" : "text-muted-foreground")}>
-              <Calendar className="w-3 h-3" /> 予定: {formatDateSafe(task.dueDate)}
+            <div className="space-y-1">
+              <p className="text-[9px] font-bold text-muted-foreground uppercase">完了予定日</p>
+              <div className={cn("text-[11px] flex items-center gap-1.5 p-1 -ml-1 rounded", isOverdue ? "text-destructive font-bold bg-destructive/5" : "text-foreground")}>
+                <Calendar className="w-3 h-3 opacity-50" />
+                {formatDateSafe(task.dueDate)}
+              </div>
             </div>
           </div>
 
           {pdfCount > 0 && (
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold text-muted-foreground ml-1">添付資料:</p>
-              <div className="flex flex-col gap-1">
+            <div className="space-y-2 pt-1">
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">添付資料 ({pdfCount})</p>
+              <div className="flex flex-col gap-1.5">
                 {task.pdfs?.map((pdf, idx) => (
                   <div key={idx} className="flex gap-1">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 text-[10px] h-8 justify-start px-3 overflow-hidden" 
-                      onClick={() => handleViewPdf(pdf.data, pdf.name)}
+                      className="flex-1 text-[10px] h-9 justify-start px-3 bg-muted/30 border-border/50 overflow-hidden" 
+                      onClick={() => {
+                        const win = window.open();
+                        if (win) win.document.write(`<iframe width='100%' height='100%' src='${pdf.data}'></iframe>`);
+                      }}
                     >
-                      <Paperclip className="w-3 h-3 mr-2 shrink-0" />
+                      <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-50" />
                       <span className="truncate">{pdf.name}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8 shrink-0 bg-primary/5 text-primary hover:bg-primary/10"
-                      onClick={() => handleDownloadPdf(pdf.data, pdf.name)}
-                      title="ダウンロード"
+                      className="h-9 w-9 shrink-0 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
+                      onClick={() => {
+                        const a = document.createElement("a");
+                        a.href = pdf.data;
+                        a.download = pdf.name;
+                        a.click();
+                      }}
                     >
-                      <Download className="w-3 h-3" />
+                      <Download className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 ))}
@@ -300,15 +299,5 @@ function PublicTaskCard({ task }: { task: Task }) {
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function EmptyState({ isSearching }: { isSearching: boolean }) {
-  return (
-    <div className="text-center py-24 bg-muted/20 rounded-2xl border-2 border-dashed">
-      <p className="text-muted-foreground">
-        {isSearching ? "一致するタスクが見つかりませんでした。" : "タスクはありません。"}
-      </p>
-    </div>
   )
 }

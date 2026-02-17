@@ -21,11 +21,17 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    match /client_task_views/{identifier}/tasks/{taskId} {
-      // 共有ポータルは完全公開（認証なしで読み取り可能）
+    match /client_task_views/{identifier} {
+      // 親ドキュメント自体の読み取りを許可（リスト表示に必要）
       allow read: if true;
-      // 書き込みは管理人のみ
-      allow write: if isAdmin();
+      
+      match /tasks/{taskId} {
+        // 共有ポータルは完全公開（認証なしで読み取り可能）
+        // get (単体) と list (一覧) 両方を明示的に許可
+        allow get, list: if true;
+        // 書き込みは管理人のみ
+        allow write: if isAdmin();
+      }
     }
   }
 }
