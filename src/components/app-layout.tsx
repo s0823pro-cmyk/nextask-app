@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -51,8 +52,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 管理者チェック (s0823.pro@gmail.com のみ許可)
-  const isAuthorizedAdmin = user && !user.isAnonymous && user.email && ALLOWED_ADMINS.includes(user.email);
+  // 管理者チェック (大文字小文字を区別せずに比較)
+  const userEmail = user?.email?.toLowerCase();
+  const isAuthorizedAdmin = user && !user.isAnonymous && userEmail && ALLOWED_ADMINS.map(e => e.toLowerCase()).includes(userEmail);
 
   if (!isAuthorizedAdmin) {
     return (
@@ -77,7 +79,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {user && !user.isAnonymous 
-                ? `現在のアカウント（${user.email}）は管理者ではありません。許可されたアカウントで再ログインしてください。`
+                ? `現在のアカウント（${user.email}）は管理者リストに含まれていません。許可されたメールアドレスでログインしてください。`
                 : '管理画面にアクセスするには管理者アカウントでの認証が必要です。'}
             </p>
           </div>
@@ -129,7 +131,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           {user && (
             <div className="flex flex-col gap-2 pt-4 border-t">
-               <p className="text-[10px] text-muted-foreground">ログイン中: {user.email || '匿名ユーザー'}</p>
+               <p className="text-[10px] text-muted-foreground">ログイン中: {user.email}</p>
                <Button variant="ghost" size="sm" onClick={() => auth.signOut()}>
                 ログアウト
               </Button>
