@@ -6,12 +6,12 @@ import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { useUser, useAuth } from '@/firebase';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, LogIn, LayoutDashboard, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// 管理者として許可するGoogleアカウントのメールアドレス
+// 管理者として許可するGoogleアカウント
 const ALLOWED_ADMINS = ["s0823.pro@gmail.com"];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen w-full bg-background" />;
   }
 
-  // 共有ポータルは認証なしで表示可能
+  // 共有ポータルは認証ガードをスキップ
   if (isPublicView) {
     return (
       <div className="min-h-screen w-full bg-background overflow-auto">
@@ -40,15 +40,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // 認証情報の初期読み込み中
   if (isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground animate-pulse">認証情報を確認中...</p>
+        </div>
       </div>
     );
   }
 
-  // 管理者チェック: ログインしていない、または許可されたメールアドレスではない場合
+  // 管理者チェック
   const isAuthorizedAdmin = user && !user.isAnonymous && user.email && ALLOWED_ADMINS.includes(user.email);
 
   if (!isAuthorizedAdmin) {
@@ -67,32 +71,43 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-2 text-primary mb-2">
               <LayoutDashboard className="h-6 w-6" />
-              <span className="font-bold text-xl">NexTask</span>
+              <span className="font-bold text-xl">NexTask Admin</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight">
               {user && !user.isAnonymous ? 'アクセス権限がありません' : '管理者ログイン'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {user && !user.isAnonymous 
-                ? `現在のアカウント（${user.email}）には管理者権限がありません。許可されたメールアドレス（${ALLOWED_ADMINS[0]}）でログインしてください。`
+                ? `現在のアカウント（${user.email}）は管理者ではありません。許可されたアカウントで再ログインしてください。`
                 : '管理画面にアクセスするには管理者アカウントでの認証が必要です。'}
             </p>
           </div>
           <div className="pt-4">
             <Button 
               size="lg" 
-              className="w-full font-bold shadow-md transition-all active:scale-95" 
+              className="w-full font-bold shadow-md h-12" 
               disabled={isLoggingIn}
               onClick={async () => {
                 setIsLoggingIn(true);
+                const provider = new GoogleAuthProvider();
                 try {
-                  await initiateGoogleSignIn(auth);
-                } catch (error) {
-                  toast({
-                    title: "ログインエラー",
-                    description: "ポップアップがブロックされた可能性があります。ブラウザの設定を確認してください。",
-                    variant: "destructive"
-                  });
+                  await signInWithPopup(auth, provider);
+                  toast({ title: "ログインに成功しました" });
+                } catch (error: any) {
+                  console.error("Login error:", error);
+                  if (error.code === 'auth/popup-blocked') {
+                    toast({
+                      title: "ブロックされました",
+                      description: "ブラウザのポップアップブロックを解除してください。",
+                      variant: "destructive"
+                    });
+                  } else {
+                    toast({
+                      title: "ログイン失敗",
+                      description: "認証中にエラーが発生しました。",
+                      variant: "destructive"
+                    });
+                  }
                 } finally {
                   setIsLoggingIn(false);
                 }
@@ -103,18 +118,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               ) : (
                 <LogIn className="mr-2 h-5 w-5" />
               )}
-              {user && !user.isAnonymous ? '別のアカウントでログイン' : 'Googleでログイン'}
+              {user && !user.isAnonymous ? '別のアカウントでログイン' : 'Googleアカウントでログイン'}
             </Button>
           </div>
-          {user && !user.isAnonymous && (
-            <Button variant="ghost" size="sm" className="mt-4" onClick={() => auth.signOut()}>
-              ログアウト
-            </Button>
+          {user && (
+            <div className="flex flex-col gap-2 pt-4 border-t">
+               <p className="text-[10px] text-muted-foreground">ログイン中: {user.email || '匿名ユーザー'}</p>
+               <Button variant="ghost" size="sm" onClick={() => auth.signOut()}>
+                ログアウト
+              </Button>
+            </div>
           )}
         </div>
-        <p className="mt-8 text-[10px] text-muted-foreground">
-          ※ ログイン画面が表示されない場合は、ブラウザのアドレスバーにあるポップアップブロック解除を許可してください。
-        </p>
       </div>
     );
   }
