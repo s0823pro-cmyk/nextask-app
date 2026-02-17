@@ -10,7 +10,7 @@ import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { Button } from '@/components/ui/button';
 import { Lock, LogIn, LayoutDashboard, AlertCircle } from 'lucide-react';
 
-// 管理者として許可するメールアドレスのリスト
+// 管理者として許可するメールアドレスをここに設定してください
 const ALLOWED_ADMINS = ["YOUR_EMAIL@gmail.com"];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +29,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen w-full bg-background" />;
   }
 
+  // 共有ポータルは認証なしで表示可能
   if (isPublicView) {
     return (
       <div className="min-h-screen w-full bg-background overflow-auto">
@@ -45,7 +46,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 管理者チェック: ログインしていない、匿名、または許可されたメールアドレスではない場合
+  // 管理者チェック: ログインしていない、または許可されたメールアドレスではない場合
   const isAuthorizedAdmin = user && !user.isAnonymous && user.email && ALLOWED_ADMINS.includes(user.email);
 
   if (!isAuthorizedAdmin) {

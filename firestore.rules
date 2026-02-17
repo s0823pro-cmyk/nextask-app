@@ -7,7 +7,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // ここで管理者のメールアドレスを指定します
+    // ここに管理者のメールアドレスを入力してください
     function isAdmin() {
       return isSignedIn() 
         && request.auth.token.email_verified == true 
