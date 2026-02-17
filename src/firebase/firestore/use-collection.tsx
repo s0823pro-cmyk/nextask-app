@@ -79,16 +79,10 @@ export function useCollection<T = any>(
         setData([]);
         setIsLoading(false);
 
-        // 権限エラーの場合、オプションが有効でなければグローバル通知を発火
         if (err.code === 'permission-denied' && !options.suppressGlobalError) {
-          let path = "unknown";
-          try {
-            path = (memoizedTargetRefOrQuery as any).path || (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString() || "query";
-          } catch (e) {}
-
           const contextualError = new FirestorePermissionError({
             operation: 'list',
-            path,
+            path: 'collection_or_query',
           });
           errorEmitter.emit('permission-error', contextualError);
         }

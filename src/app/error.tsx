@@ -19,9 +19,8 @@ export default function Error({
 
   useEffect(() => {
     setMounted(true);
-    console.error("Critical error captured in error.tsx:", error);
     setIsPublic(pathname?.startsWith('/view/') || false);
-  }, [error, pathname]);
+  }, [pathname]);
 
   if (!mounted) return null;
 
@@ -61,11 +60,9 @@ export default function Error({
           )}
         </div>
         
-        {/* デバッグ情報を常に表示（控えめな位置） */}
-        <div className="pt-6 mt-6 border-t text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto">
-          <p className="font-bold mb-1">Debug Info:</p>
-          {error?.message || "Unknown error"}
-          {error?.stack && <div className="mt-2">{error.stack}</div>}
+        <div className="pt-6 mt-6 border-t text-[10px] text-left text-muted-foreground/30 font-mono break-all max-h-24 overflow-auto">
+          <p className="font-bold mb-1">Info:</p>
+          {error?.message || "Render error"}
         </div>
       </div>
     </div>

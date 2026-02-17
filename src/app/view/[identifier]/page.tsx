@@ -44,15 +44,11 @@ export default function PublicClientView() {
   }, [])
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!identifier || !db) return null;
-    try {
-      const cleanId = String(identifier).trim();
-      if (!cleanId || cleanId === 'undefined' || cleanId === '[identifier]') return null;
-      return collection(db, 'client_task_views', cleanId, 'tasks');
-    } catch (e) {
-      return null;
-    }
-  }, [db, identifier]);
+    if (!mounted || !identifier || !db) return null;
+    const cleanId = String(identifier).trim();
+    if (cleanId === "" || cleanId === "undefined" || cleanId === "[identifier]") return null;
+    return collection(db, 'client_task_views', cleanId, 'tasks');
+  }, [db, identifier, mounted]);
   
   const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery, { 
     suppressGlobalError: true 
@@ -66,8 +62,9 @@ export default function PublicClientView() {
     );
   }
 
-  // エラー時やパスが不正な場合の表示
-  if (error || (!isLoading && !tasksData && identifier && identifier !== 'undefined')) {
+  const isInvalidIdentifier = !isLoading && !tasksData && identifier && (identifier === 'undefined' || identifier === '[identifier]');
+
+  if (error || isInvalidIdentifier) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
         <Card className="max-w-md w-full border shadow-xl p-8 space-y-6 rounded-2xl">
@@ -77,11 +74,11 @@ export default function PublicClientView() {
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">アクセスできません</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              このURLは無効であるか、閲覧権限が制限されています。正しいURLを使用しているかご確認ください。
+              このURLは無効であるか、閲覧権限が制限されています。
             </p>
           </div>
           <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
-            再読み込みしてリトライ
+            再読み込み
           </Button>
         </Card>
       </div>
@@ -226,9 +223,11 @@ function PublicTaskCard({ task }: { task: Task }) {
       link.rel = "noopener noreferrer";
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
     } catch (err) {
       console.error("PDF viewing error:", err);
     }
