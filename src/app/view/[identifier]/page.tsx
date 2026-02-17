@@ -50,19 +50,22 @@ export default function PublicClientView() {
   
   const { data: tasksData, isLoading, error } = useCollection<Task>(tasksQuery);
 
-  // マウント前は何も表示しない（ハイドレーション・エラー防止）
+  // ハイドレーションエラーを完全に防ぐため、マウントされるまで何も描画しない
   if (!mounted) {
-    return <div className="min-h-screen bg-background" />;
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
   }
 
-  // エラー時の表示
+  // エラー時の安全な表示
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 max-w-md">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
           <h2 className="text-xl font-bold">アクセスできません</h2>
-          <p className="text-muted-foreground">URLが正しいか、または管理者にお問い合わせください。</p>
+          <p className="text-muted-foreground text-sm">URLが正しいか確認してください。問題が解決しない場合は、管理者にお問い合わせください。</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>再読み込み</Button>
         </div>
       </div>
     );
@@ -164,7 +167,8 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!dateStr || !mounted) return "-"
     try {
       const date = parseISO(dateStr)
-      return isValid(date) ? format(date, "yyyy年MM月dd日") : "-"
+      if (!isValid(date)) return "-"
+      return format(date, "yyyy年MM月dd日")
     } catch {
       return "-"
     }
@@ -174,9 +178,10 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
+      if (!isValid(date)) return false
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      return isValid(date) && date.getTime() < today.getTime()
+      return date.getTime() < today.getTime()
     } catch {
       return false
     }
@@ -206,7 +211,7 @@ function PublicTaskCard({ task }: { task: Task }) {
   const pdfCount = Array.isArray(task.pdfs) ? task.pdfs.length : 0
 
   return (
-    <Card className="border-border/50 relative flex flex-col group overflow-hidden">
+    <Card className="border-border/50 relative flex flex-col group overflow-hidden bg-card">
       <div className={cn("absolute left-0 top-0 bottom-0 w-1", 
         task.status === 'done' ? "bg-primary" : task.status === 'pending' ? "bg-orange-500" : task.status === 'awaiting_payment' ? "bg-amber-500" : "bg-blue-500"
       )} />
@@ -239,9 +244,9 @@ function PublicTaskCard({ task }: { task: Task }) {
               <Eye className="w-3 h-3" /> 全文を確認
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] w-[95vw]">
+          <DialogContent className="sm:max-w-[600px] w-[95vw] bg-white">
             <DialogHeader><DialogTitle>{task.title}</DialogTitle></DialogHeader>
-            <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md">
+            <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-md bg-muted/10">
               <div className="text-sm whitespace-pre-wrap">{task.description}</div>
               {task.constructionType && (
                 <div className="mt-4 pt-4 border-t">

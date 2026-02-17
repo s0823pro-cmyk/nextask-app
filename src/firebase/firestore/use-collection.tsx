@@ -28,7 +28,7 @@ export interface UseCollectionResult<T> {
 
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries.
+ * Handles nullable references/queries safely to prevent client-side crashes.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: (CollectionReference<DocumentData> | Query<DocumentData>) | null | undefined,
@@ -41,6 +41,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // ターゲットが指定されていない場合は何もしない（安全に復帰）
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -54,34 +55,39 @@ export function useCollection<T = any>(
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        snapshot.forEach((doc) => {
-          results.push({ ...(doc.data() as T), id: doc.id });
-        });
-        setData(results);
-        setError(null);
-        setIsLoading(false);
+        try {
+          const results: ResultItemType[] = [];
+          snapshot.forEach((doc) => {
+            results.push({ ...(doc.data() as T), id: doc.id });
+          });
+          setData(results);
+          setError(null);
+          setIsLoading(false);
+        } catch (e) {
+          console.error("Error processing snapshot data:", e);
+          setError(e as Error);
+          setIsLoading(false);
+        }
       },
       (err: FirestoreError) => {
+        // 開発環境と本番環境の両方でエラーをコンソールに表示
         console.error("Firestore onSnapshot error:", err);
         
-        // 開発環境のみ詳細を表示
-        let path = "unknown";
-        try {
-          path = (memoizedTargetRefOrQuery as any).path || (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString() || "query";
-        } catch (e) {}
-
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        });
-
-        setError(err); // 画面を落とさないよう、生のFirestoreErrorをセット
+        setError(err);
         setData([]);
         setIsLoading(false);
 
-        // 権限エラーの場合のみグローバルに通知
+        // 権限エラー（permission-denied）の場合のみグローバル通知を発火
         if (err.code === 'permission-denied') {
+          let path = "unknown";
+          try {
+            path = (memoizedTargetRefOrQuery as any).path || (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString() || "query";
+          } catch (e) {}
+
+          const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path,
+          });
           errorEmitter.emit('permission-error', contextualError);
         }
       }

@@ -13,6 +13,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
+    // コンソールに詳細を出力してデバッグを容易にする
     console.error("Client-side exception caught:", error);
   }, [error]);
 
@@ -33,7 +34,7 @@ export default function Error({
         <div className="flex flex-col gap-3">
           <Button onClick={() => reset()} className="w-full">
             <RefreshCcw className="mr-2 h-4 w-4" />
-            再試行する
+            再読み込みしてリトライ
           </Button>
           <Button variant="outline" asChild className="w-full">
             <a href="/">
