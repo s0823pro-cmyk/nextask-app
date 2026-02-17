@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -119,10 +118,13 @@ export default function ClientDashboard() {
 
   const filteredTasks = (tasks || []).filter(t => {
     if (!t) return false;
-    const q = searchQuery.toLowerCase();
-    return (t.title || "").toLowerCase().includes(q) ||
-           (t.description || "").toLowerCase().includes(q) ||
-           (t.constructionType || "").toLowerCase().includes(q);
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (t.title || "").toLowerCase().includes(q) ||
+      (t.description || "").toLowerCase().includes(q) ||
+      (t.constructionType || "").toLowerCase().includes(q)
+    );
   });
 
   const inProgressList = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo');
@@ -182,7 +184,7 @@ export default function ClientDashboard() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder="タスクを検索..." 
+          placeholder="案件名、工事内容、説明で検索..." 
           className="pl-9" 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

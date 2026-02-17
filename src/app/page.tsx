@@ -84,11 +84,14 @@ export default function Home() {
   const filteredTasks = React.useMemo(() => {
     const searchLower = searchQuery.toLowerCase().trim();
     if (!searchLower) return [];
-    return (allTasks || []).filter(t => 
-      (t.title || "").toLowerCase().includes(searchLower) || 
-      (t.description || "").toLowerCase().includes(searchLower) ||
-      (t.constructionType || "").toLowerCase().includes(searchLower)
-    );
+    return (allTasks || []).filter(t => {
+      if (!t) return false;
+      return (
+        (t.title || "").toLowerCase().includes(searchLower) || 
+        (t.description || "").toLowerCase().includes(searchLower) ||
+        (t.constructionType || "").toLowerCase().includes(searchLower)
+      );
+    });
   }, [allTasks, searchQuery]);
 
   const handleCreateTask = (data: Partial<Task>) => {
@@ -187,7 +190,7 @@ export default function Home() {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="案件名、内容で検索..." 
+              placeholder="案件名、工事内容、説明で検索..." 
               className="pl-9 h-11 bg-white border-border/50 shadow-sm" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

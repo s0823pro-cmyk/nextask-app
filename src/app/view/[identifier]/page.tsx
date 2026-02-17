@@ -89,9 +89,11 @@ export default function PublicClientView() {
     if (!t) return false;
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
-    return (t.title || "").toLowerCase().includes(q) || 
-           (t.description || "").toLowerCase().includes(q) ||
-           (t.constructionType || "").toLowerCase().includes(q);
+    return (
+      (t.title || "").toLowerCase().includes(q) || 
+      (t.description || "").toLowerCase().includes(q) ||
+      (t.constructionType || "").toLowerCase().includes(q)
+    );
   });
 
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
@@ -116,7 +118,7 @@ export default function PublicClientView() {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="案件名などで検索..." 
+              placeholder="案件名、工事内容などで検索..." 
               className="pl-9 h-11 bg-white border-border/50 shadow-sm" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
