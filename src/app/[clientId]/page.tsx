@@ -56,7 +56,7 @@ export default function ClientDashboard() {
   const tasksQuery = useMemoFirebase(() => {
     return query(collection(db, 'tasks'), where('clientId', '==', clientId));
   }, [db, clientId]);
-  const { data: tasks = [], isLoading } = useCollection<Task>(tasksQuery);
+  const { data: tasks, isLoading } = useCollection<Task>(tasksQuery);
 
   const handleCreateTask = (data: Partial<Task>) => {
     if (!client) return;
@@ -119,7 +119,7 @@ export default function ClientDashboard() {
     }
   }
 
-  // 検索フィルタリング
+  // 検索フィルタリング (tasksがnullの場合を考慮)
   const filteredTasks = (tasks || []).filter(t => 
     (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (t.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,7 +142,7 @@ export default function ClientDashboard() {
           onStatusChange={handleStatusChange} 
         />
       ))}
-      {taskList.length === 0 && (
+      {taskList.length === 0 && !isLoading && (
         <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl text-muted-foreground">
           タスクが見つかりませんでした。
         </div>
