@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { format, isValid, parseISO } from "date-fns"
-import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins, Download } from "lucide-react"
+import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins, Download, Eye } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -63,27 +63,34 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
     }
   }, [task.dueDate, task.status, mounted])
 
-  // PDFを安定して操作するための関数
-  const handlePdfAction = async (data: string, name: string) => {
+  // PDF同期閲覧ロジック
+  const handlePdfAction = (data: string) => {
     try {
-      const response = await fetch(data);
-      const blob = await response.blob();
+      const parts = data.split(',');
+      if (parts.length < 2) return;
+      
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([ab], { type: mimeString });
       const url = URL.createObjectURL(blob);
       
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      if (isMobile) {
-        window.open(url, '_blank');
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error("PDF action error:", err);
+      console.error("PDF viewing error:", err);
     }
   }
 
@@ -109,7 +116,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
               </Badge>
             )}
             {pdfCount > 0 && (
-              <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none">
+              <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border-none cursor-pointer" onClick={() => task.pdfs?.[0] && handlePdfAction(task.pdfs[0].data)}>
                 <Paperclip className="w-2.5 h-2.5 mr-1" />
                 PDF {pdfCount}
               </Badge>
@@ -137,10 +144,10 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
             {pdfCount > 0 && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground">添付資料</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground">添付資料 (閲覧)</DropdownMenuLabel>
                 {task.pdfs?.map((pdf, idx) => (
-                  <DropdownMenuItem key={idx} onClick={() => handlePdfAction(pdf.data, pdf.name)} className="font-semibold text-primary">
-                    <Download className="w-3 h-3 mr-2" /> {pdf.name}
+                  <DropdownMenuItem key={idx} onClick={() => handlePdfAction(pdf.data)} className="font-semibold text-primary">
+                    <Eye className="w-3 h-3 mr-2" /> {pdf.name}
                   </DropdownMenuItem>
                 ))}
               </>

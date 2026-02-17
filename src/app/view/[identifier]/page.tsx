@@ -21,7 +21,7 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Task } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 const statusConfig = {
@@ -204,34 +204,36 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }
 
-  // スマートフォン対応のPDF処理関数
-  const handlePdfAction = async (data: string, name: string) => {
+  // 同期的なPDF処理ロジック (スマートフォン対応)
+  const handlePdfAction = (data: string) => {
     try {
-      // Base64をBlobに変換（fetchを使用するとモバイルブラウザで最も安定します）
-      const response = await fetch(data);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const parts = data.split(',');
+      if (parts.length < 2) return;
       
-      // モバイルの場合は別タブで開くことを試みる
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        // モバイルでは直接開く
-        window.open(url, '_blank');
-      } else {
-        // PCではダウンロードを実行
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
       }
       
-      // すぐに破棄するとモバイルで失敗する場合があるため、少し待つか
-      // 実際にはURL.revokeObjectURL(url)は必要ですが、モバイルの挙動次第で調整が必要
+      const blob = new Blob([ab], { type: mimeString });
+      const url = URL.createObjectURL(blob);
+      
+      // スマートフォンでも確実に別タブで開くためにリンクを生成してクリック
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // リソース解放
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error("PDF processing error:", err);
+      console.error("PDF viewing error:", err);
     }
   }
 
@@ -311,28 +313,19 @@ function PublicTaskCard({ task }: { task: Task }) {
 
           {pdfCount > 0 && (
             <div className="space-y-2 pt-1">
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">添付資料 ({pdfCount})</p>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">添付資料 ({pdfCount}) ※タップで閲覧</p>
               <div className="flex flex-col gap-1.5">
                 {task.pdfs?.map((pdf, idx) => (
-                  <div key={idx} className="flex gap-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 text-[10px] h-9 justify-start px-3 bg-muted/30 border-border/50 overflow-hidden font-bold" 
-                      onClick={() => handlePdfAction(pdf.data, pdf.name)}
-                    >
-                      <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-50" />
-                      <span className="truncate">{pdf.name}</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 shrink-0 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 transition-colors"
-                      onClick={() => handlePdfAction(pdf.data, pdf.name)}
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  <Button 
+                    key={idx}
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-[10px] h-10 justify-start px-3 bg-primary/5 border-primary/10 overflow-hidden font-bold hover:bg-primary/10 text-primary" 
+                    onClick={() => handlePdfAction(pdf.data)}
+                  >
+                    <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-70" />
+                    <span className="truncate">{pdf.name}</span>
+                  </Button>
                 ))}
               </div>
             </div>
