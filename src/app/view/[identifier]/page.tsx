@@ -49,7 +49,11 @@ export default function PublicClientView() {
   const { data: tasksData, isLoading } = useCollection<Task>(tasksQuery);
 
   if (!mounted) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -156,7 +160,8 @@ function PublicTaskCard({ task }: { task: Task }) {
     if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
-      return isValid(date) && date < new Date()
+      // クライアントサイドでのみ現在時刻と比較
+      return isValid(date) && date.getTime() < new Date().setHours(0,0,0,0)
     } catch {
       return false
     }

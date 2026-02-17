@@ -57,7 +57,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
     if (!mounted || task.status === 'done' || task.status === 'awaiting_payment' || !task.dueDate) return false
     try {
       const date = parseISO(task.dueDate)
-      return isValid(date) && date < new Date()
+      return isValid(date) && date.getTime() < new Date().setHours(0,0,0,0)
     } catch {
       return false
     }
