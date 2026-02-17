@@ -63,29 +63,27 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
     }
   }, [task.dueDate, task.status, mounted])
 
-  // PDFを安全にダウンロード/閲覧するための処理
-  const handlePdfAction = (data: string, name: string) => {
+  // PDFを安定して操作するための関数
+  const handlePdfAction = async (data: string, name: string) => {
     try {
-      const base64Parts = data.split(',');
-      const mime = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const byteCharacters = atob(base64Parts[1]);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mime });
+      const response = await fetch(data);
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     } catch (err) {
-      console.error("PDF download error:", err);
+      console.error("PDF action error:", err);
     }
   }
 

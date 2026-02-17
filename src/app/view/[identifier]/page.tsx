@@ -204,27 +204,32 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }
 
-  // PDFを安全に閲覧・ダウンロードするための関数
-  const handlePdfDownload = (data: string, name: string) => {
+  // スマートフォン対応のPDF処理関数
+  const handlePdfAction = async (data: string, name: string) => {
     try {
-      const base64Parts = data.split(',');
-      const mime = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-      const byteCharacters = atob(base64Parts[1]);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mime });
+      // Base64をBlobに変換（fetchを使用するとモバイルブラウザで最も安定します）
+      const response = await fetch(data);
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // モバイルの場合は別タブで開くことを試みる
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // モバイルでは直接開く
+        window.open(url, '_blank');
+      } else {
+        // PCではダウンロードを実行
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      
+      // すぐに破棄するとモバイルで失敗する場合があるため、少し待つか
+      // 実際にはURL.revokeObjectURL(url)は必要ですが、モバイルの挙動次第で調整が必要
     } catch (err) {
       console.error("PDF processing error:", err);
     }
@@ -314,7 +319,7 @@ function PublicTaskCard({ task }: { task: Task }) {
                       variant="outline" 
                       size="sm" 
                       className="flex-1 text-[10px] h-9 justify-start px-3 bg-muted/30 border-border/50 overflow-hidden font-bold" 
-                      onClick={() => handlePdfDownload(pdf.data, pdf.name)}
+                      onClick={() => handlePdfAction(pdf.data, pdf.name)}
                     >
                       <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-50" />
                       <span className="truncate">{pdf.name}</span>
@@ -323,7 +328,7 @@ function PublicTaskCard({ task }: { task: Task }) {
                       variant="outline"
                       size="icon"
                       className="h-9 w-9 shrink-0 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 transition-colors"
-                      onClick={() => handlePdfDownload(pdf.data, pdf.name)}
+                      onClick={() => handlePdfAction(pdf.data, pdf.name)}
                     >
                       <Download className="w-3.5 h-3.5" />
                     </Button>
