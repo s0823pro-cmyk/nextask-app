@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Client } from "@/lib/types"
+import { Client, ClientType } from "@/lib/types"
 
 const colors = [
   { label: "ブルー", value: "bg-blue-500" },
@@ -37,11 +37,12 @@ const colors = [
 const formSchema = z.object({
   name: z.string().min(1, { message: "取引先名を入力してください" }),
   color: z.string().min(1, { message: "色を選択してください" }),
+  clientType: z.enum(["prime", "sub"], { required_error: "種別を選択してください" }),
 })
 
 interface ClientFormProps {
   initialClient?: Client
-  onSubmit: (data: { name: string; color: string }) => void
+  onSubmit: (data: { name: string; color: string; clientType: ClientType }) => void
   onCancel: () => void
 }
 
@@ -51,20 +52,22 @@ export function ClientForm({ initialClient, onSubmit, onCancel }: ClientFormProp
     defaultValues: {
       name: initialClient?.name || "",
       color: initialClient?.color || "bg-blue-500",
+      clientType: initialClient?.clientType || "prime",
     },
   })
 
-  // Reset form when initialClient changes (e.g. when switching from add to edit or between different clients)
   React.useEffect(() => {
     if (initialClient) {
       form.reset({
         name: initialClient.name,
         color: initialClient.color,
+        clientType: initialClient.clientType || "prime",
       })
     } else {
       form.reset({
         name: "",
         color: "bg-blue-500",
+        clientType: "prime",
       })
     }
   }, [initialClient, form])
@@ -81,6 +84,28 @@ export function ClientForm({ initialClient, onSubmit, onCancel }: ClientFormProp
               <FormControl>
                 <Input placeholder="例: 株式会社サンプル" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="clientType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>取引種別</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="種別を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="prime">元請け</SelectItem>
+                  <SelectItem value="sub">下請け</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

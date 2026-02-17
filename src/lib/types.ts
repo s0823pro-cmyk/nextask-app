@@ -21,10 +21,13 @@ export interface Task {
   updatedAt: string;
 }
 
+export type ClientType = 'prime' | 'sub';
+
 export interface Client {
   id: string;
   name: string;
   color: string;
   dedicatedUrlIdentifier: string;
+  clientType?: ClientType;
   contactEmail?: string;
 }

@@ -37,15 +37,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Client } from "@/lib/types"
+import { Client, ClientType } from "@/lib/types"
 import { saveClientFirestore, deleteClientFirestore, generateId } from "@/lib/task-service"
 import { ClientForm } from "@/components/client-form"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
+import { Badge } from "@/components/ui/badge"
 
-// 並び替えのためのカラー順序定義
 const COLOR_ORDER: Record<string, number> = {
   "bg-blue-500": 1,
   "bg-green-500": 2,
@@ -62,7 +62,6 @@ export function SidebarNav() {
   const clientsRef = useMemoFirebase(() => collection(db, 'clients'), [db]);
   const { data: rawClients = [] } = useCollection<Client>(clientsRef);
   
-  // カラー順でソートされた取引先リスト
   const clients = React.useMemo(() => {
     return [...(rawClients || [])].sort((a, b) => {
       const orderA = COLOR_ORDER[a.color] || 99
@@ -74,11 +73,8 @@ export function SidebarNav() {
   
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
-  
-  // 削除確認用の状態管理
   const [clientToDelete, setClientToDelete] = React.useState<{id: string, name: string} | null>(null)
 
-  // ダイアログが完全に閉じてからデータをクリアするためのEffect
   React.useEffect(() => {
     if (!isSettingsOpen) {
       const timer = setTimeout(() => {
@@ -88,12 +84,13 @@ export function SidebarNav() {
     }
   }, [isSettingsOpen])
 
-  const handleAddOrUpdateClient = (data: { name: string; color: string }) => {
+  const handleAddOrUpdateClient = (data: { name: string; color: string; clientType: ClientType }) => {
     if (editingClient) {
       const updatedClient: Client = {
         ...editingClient,
         name: data.name,
         color: data.color,
+        clientType: data.clientType,
       }
       saveClientFirestore(db, updatedClient)
       setIsSettingsOpen(false)
@@ -103,6 +100,7 @@ export function SidebarNav() {
         id: generateId(),
         name: data.name,
         color: data.color,
+        clientType: data.clientType,
         dedicatedUrlIdentifier: Math.random().toString(36).substr(2, 12),
       }
       saveClientFirestore(db, newClient)
@@ -160,7 +158,12 @@ export function SidebarNav() {
                   >
                     <Link href={`/${client.id}`}>
                       <div className={`w-2 h-2 rounded-full ${client.color}`} />
-                      <span>{client.name}</span>
+                      <span className="flex-1 truncate">{client.name}</span>
+                      {client.clientType && (
+                        <span className="text-[10px] opacity-60 font-normal">
+                          {client.clientType === 'prime' ? '元請' : '下請'}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -191,7 +194,10 @@ export function SidebarNav() {
                           <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
                             <div className="flex items-center gap-2">
                               <div className={`w-3 h-3 rounded-full ${client.color}`} />
-                              <span className="text-sm">{client.name}</span>
+                              <span className="text-sm font-medium">{client.name}</span>
+                              <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4">
+                                {client.clientType === 'prime' ? '元請け' : '下請け'}
+                              </Badge>
                             </div>
                             <div className="flex items-center gap-1">
                               <Button 

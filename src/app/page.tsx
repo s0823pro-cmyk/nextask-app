@@ -27,8 +27,8 @@ import { saveTaskWithSync, deleteTaskWithSync } from "@/lib/task-service"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
 import { initiateGoogleSignIn } from "@/firebase/non-blocking-login"
+import { Badge } from "@/components/ui/badge"
 
-// 並び替えのためのカラー順序定義
 const COLOR_ORDER: Record<string, number> = {
   "bg-blue-500": 1,
   "bg-green-500": 2,
@@ -196,8 +196,6 @@ export default function Home() {
 
   if (!mounted) return null;
 
-  // 匿名ユーザーでもログインしていても表示しますが、
-  // 匿名ユーザーの場合はGoogleログインを促すバナーを表示することが可能です。
   const isAnonymous = user?.isAnonymous;
 
   return (
@@ -333,7 +331,14 @@ export default function Home() {
                       <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full ${client.color}`} />
                         <div>
-                          <p className="font-bold text-sm md:text-base">{client.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm md:text-base">{client.name}</p>
+                            {client.clientType && (
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-normal">
+                                {client.clientType === 'prime' ? '元請け' : '下請け'}
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">{taskCount}件のタスク</p>
                         </div>
                       </div>

@@ -32,6 +32,7 @@ import { TaskForm } from "@/components/task-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase"
 import { collection, doc, query, where } from "firebase/firestore"
+import { Badge } from "@/components/ui/badge"
 
 export default function ClientDashboard() {
   const { clientId } = useParams<{ clientId: string }>()
@@ -44,7 +45,6 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  // ダイアログやアラートが閉じた際にポインターイベントを復帰させる共通処理
   React.useEffect(() => {
     if (!isEditOpen && !taskToDelete) {
       if (typeof document !== 'undefined') {
@@ -54,7 +54,6 @@ export default function ClientDashboard() {
     }
   }, [isEditOpen, taskToDelete])
 
-  // 編集データのクリーンアップ
   React.useEffect(() => {
     if (!isEditOpen) {
       const timer = setTimeout(() => {
@@ -210,6 +209,11 @@ export default function ClientDashboard() {
           <div className="flex items-center gap-2 mb-1">
             <div className={`w-3 h-3 rounded-full ${client?.color || 'bg-gray-400'}`} />
             <span className="text-xs md:text-sm font-medium text-muted-foreground">取引先</span>
+            {client?.clientType && (
+              <Badge variant="outline" className="text-[10px] py-0 h-4 ml-1">
+                {client.clientType === 'prime' ? '元請け' : '下請け'}
+              </Badge>
+            )}
           </div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             {client?.name || '読み込み中...'} の業務フロー

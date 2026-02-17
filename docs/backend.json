@@ -37,6 +37,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "color": { "type": "string" },
+        "clientType": { "type": "string", "enum": ["prime", "sub"] },
         "dedicatedUrlIdentifier": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
