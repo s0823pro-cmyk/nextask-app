@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -54,10 +53,6 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
-/**
- * サイドバーコンポーネント。
- * ホーム、元請け、下請けのリストを表示し、取引先の管理も行います。
- */
 export function SidebarNav() {
   const pathname = usePathname()
   const db = useFirestore()

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -37,10 +36,6 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
-/**
- * メインダッシュボード画面。
- * 全体の統計、取引先別のリンク、タスクの検索を表示します。
- */
 export default function Home() {
   const db = useFirestore()
   const auth = useAuth()
@@ -62,7 +57,6 @@ export default function Home() {
   const tasksRef = useMemoFirebase(() => collection(db, 'tasks'), [db]);
   const { data: allTasks = [] } = useCollection<Task>(tasksRef);
 
-  // 取引先のソートとフィルタリング
   const sortedClients = React.useMemo(() => {
     return [...(clients || [])].sort((a, b) => {
       const orderA = COLOR_ORDER[a.color] || 99
@@ -100,8 +94,8 @@ export default function Home() {
   }, [allTasks, searchQuery]);
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const task = allTasks?.find(t => t.id === taskId);
-    const client = clients?.find(c => c.id === task?.clientId);
+    const task = (allTasks || []).find(t => t.id === taskId);
+    const client = (clients || []).find(c => c.id === task?.clientId);
     if (task && client) {
       const updatedTask = { ...task, status, updatedAt: new Date().toISOString() };
       saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
@@ -113,8 +107,8 @@ export default function Home() {
 
   const confirmDeleteTask = () => {
     if (taskToDelete) {
-      const task = allTasks?.find(t => t.id === taskToDelete);
-      const client = clients?.find(c => c.id === task?.clientId);
+      const task = (allTasks || []).find(t => t.id === taskToDelete);
+      const client = (clients || []).find(c => c.id === task?.clientId);
       deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
       toast({ title: "タスクを削除しました", variant: "destructive" });
       setTaskToDelete(null);
@@ -267,7 +261,7 @@ export default function Home() {
             <TaskForm 
               initialTask={editingTask} 
               onSubmit={(data) => {
-                const client = clients?.find(c => c.id === editingTask.clientId);
+                const client = (clients || []).find(c => c.id === editingTask.clientId);
                 if (client) {
                   saveTaskWithSync(db, { ...editingTask, ...data, updatedAt: new Date().toISOString() }, client.dedicatedUrlIdentifier);
                   setIsEditOpen(false);

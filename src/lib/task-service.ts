@@ -21,14 +21,11 @@ export function saveTaskWithSync(db: Firestore, task: Task, clientIdentifier: st
 
 /**
  * 取引先のタスクを削除する際、両方のコレクションから削除します。
- * clientIdentifier が不明な場合でも、マスターデータ（/tasks）からは必ず削除を試みます。
  */
 export function deleteTaskWithSync(db: Firestore, taskId: string, clientIdentifier?: string) {
-  // 管理者用マスターデータから削除
   const taskRef = doc(db, 'tasks', taskId);
   deleteDocumentNonBlocking(taskRef);
 
-  // 取引先専用ビューから削除（識別子がある場合）
   if (clientIdentifier) {
     const viewRef = doc(db, 'client_task_views', clientIdentifier, 'tasks', taskId);
     deleteDocumentNonBlocking(viewRef);
