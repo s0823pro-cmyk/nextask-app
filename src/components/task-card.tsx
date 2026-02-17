@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { format, isValid, parseISO } from "date-fns"
-import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins } from "lucide-react"
+import { Calendar, MoreVertical, CheckCircle2, Clock, FileText, Paperclip, HardHat, Coins, Download } from "lucide-react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -63,13 +63,29 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
     }
   }, [task.dueDate, task.status, mounted])
 
-  const handleViewPdf = (pdfData: string, pdfName: string) => {
-    const newWindow = window.open();
-    if (newWindow) {
-      newWindow.document.write(
-        `<iframe width='100%' height='100%' src='${pdfData}'></iframe>`
-      );
-      newWindow.document.title = pdfName || "PDF Document";
+  // PDFを安全にダウンロード/閲覧するための処理
+  const handlePdfAction = (data: string, name: string) => {
+    try {
+      const base64Parts = data.split(',');
+      const mime = base64Parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+      const byteCharacters = atob(base64Parts[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mime });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download error:", err);
     }
   }
 
@@ -125,8 +141,8 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] text-muted-foreground">添付資料</DropdownMenuLabel>
                 {task.pdfs?.map((pdf, idx) => (
-                  <DropdownMenuItem key={idx} onClick={() => handleViewPdf(pdf.data, pdf.name)} className="font-semibold text-primary">
-                    <FileText className="w-3 h-3 mr-2" /> {pdf.name}
+                  <DropdownMenuItem key={idx} onClick={() => handlePdfAction(pdf.data, pdf.name)} className="font-semibold text-primary">
+                    <Download className="w-3 h-3 mr-2" /> {pdf.name}
                   </DropdownMenuItem>
                 ))}
               </>
