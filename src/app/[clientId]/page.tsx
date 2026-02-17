@@ -169,11 +169,11 @@ export default function ClientDashboard() {
           </Button>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="h-10"><Plus className="mr-2 h-4 w-4" /> 新規タスク</Button>
+              <Button className="h-10" disabled={!client}><Plus className="mr-2 h-4 w-4" /> 新規タスク</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
               <DialogHeader><DialogTitle>新しいタスク</DialogTitle></DialogHeader>
-              <TaskForm onSubmit={handleCreateTask} onCancel={() => setIsCreateOpen(false)} />
+              <TaskForm fixedClientId={clientId} onSubmit={handleCreateTask} onCancel={() => setIsCreateOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
@@ -214,7 +214,7 @@ export default function ClientDashboard() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
           <DialogHeader><DialogTitle>タスク編集</DialogTitle></DialogHeader>
-          {editingTask && <TaskForm initialTask={editingTask} onSubmit={handleUpdateTask} onCancel={() => setIsEditOpen(false)} />}
+          {editingTask && <TaskForm initialTask={editingTask} fixedClientId={clientId} onSubmit={handleUpdateTask} onCancel={() => setIsEditOpen(false)} />}
         </DialogContent>
       </Dialog>
 
