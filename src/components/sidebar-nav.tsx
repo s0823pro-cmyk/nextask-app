@@ -72,32 +72,18 @@ export function SidebarNav() {
   }, [rawClients])
 
   const primeClients = React.useMemo(() => clients.filter(c => c.clientType === 'prime'), [clients]);
-  const subClients = React.useMemo(() => clients.filter(c => c.clientType === 'sub'), [clients]);
+  const subClients = React.useMemo(() => clients.filter(c => !c.clientType || c.clientType === 'sub'), [clients]);
   
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = React.useState<{id: string, name: string} | null>(null)
 
-  React.useEffect(() => {
-    if (!isSettingsOpen) {
-      const timer = setTimeout(() => {
-        setEditingClient(null)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [isSettingsOpen])
-
   const handleAddOrUpdateClient = (data: { name: string; color: string; clientType: ClientType }) => {
     if (editingClient) {
-      const updatedClient: Client = {
-        ...editingClient,
-        name: data.name,
-        color: data.color,
-        clientType: data.clientType,
-      }
-      saveClientFirestore(db, updatedClient)
-      setIsSettingsOpen(false)
-      toast({ title: "取引先を更新しました" })
+      saveClientFirestore(db, { ...editingClient, ...data });
+      setIsSettingsOpen(false);
+      setEditingClient(null);
+      toast({ title: "更新しました" });
     } else {
       const newClient: Client = {
         id: generateId(),
@@ -107,15 +93,7 @@ export function SidebarNav() {
         dedicatedUrlIdentifier: Math.random().toString(36).substr(2, 12),
       }
       saveClientFirestore(db, newClient)
-      toast({ title: "取引先を追加しました", description: `${data.name} がリストに追加されました。` })
-    }
-  }
-
-  const confirmDeleteClient = () => {
-    if (clientToDelete) {
-      deleteClientFirestore(db, clientToDelete.id)
-      toast({ title: "取引先を削除しました", variant: "destructive" })
-      setClientToDelete(null)
+      toast({ title: "追加しました" })
     }
   }
 
@@ -123,11 +101,7 @@ export function SidebarNav() {
     <SidebarMenu>
       {clientList.map((client) => (
         <SidebarMenuItem key={client.id}>
-          <SidebarMenuButton 
-            asChild 
-            isActive={pathname.includes(`/${client.id}`)}
-            tooltip={client.name}
-          >
+          <SidebarMenuButton asChild isActive={pathname.includes(`/${client.id}`)} tooltip={client.name}>
             <Link href={`/${client.id}`}>
               <div className={`w-2 h-2 rounded-full ${client.color}`} />
               <span className="flex-1 truncate">{client.name}</span>
@@ -151,39 +125,22 @@ export function SidebarNav() {
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>一般</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/"}>
-                  <Link href="/">
-                    <Home className="h-4 w-4" />
-                    <span>ホーム</span>
-                  </Link>
+                  <Link href="/"><Home className="h-4 w-4" /><span>ホーム</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
-          
           <SidebarSeparator className="mx-2" />
-          
           <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-1.5">
-              <Building2 className="h-3 w-3" /> 元請け
-            </SidebarGroupLabel>
+            <SidebarGroupLabel className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> 元請け</SidebarGroupLabel>
             {renderClientList(primeClients)}
-            {primeClients.length === 0 && (
-              <p className="px-4 py-2 text-[10px] text-muted-foreground italic group-data-[collapsible=icon]:hidden">なし</p>
-            )}
           </SidebarGroup>
-
           <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-1.5">
-              <Users className="h-3 w-3" /> 下請け
-            </SidebarGroupLabel>
+            <SidebarGroupLabel className="flex items-center gap-1.5"><Users className="h-3 w-3" /> 下請け</SidebarGroupLabel>
             {renderClientList(subClients)}
-            {subClients.length === 0 && (
-              <p className="px-4 py-2 text-[10px] text-muted-foreground italic group-data-[collapsible=icon]:hidden">なし</p>
-            )}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -191,70 +148,31 @@ export function SidebarNav() {
             <SidebarMenuItem>
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
-                  <SidebarMenuButton tooltip="設定">
-                    <Settings className="h-4 w-4" />
-                    <span>設定</span>
-                  </SidebarMenuButton>
+                  <SidebarMenuButton tooltip="設定"><Settings className="h-4 w-4" /><span>設定</span></SidebarMenuButton>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>設定・取引先管理</DialogTitle>
-                  </DialogHeader>
-                  
+                  <DialogHeader><DialogTitle>取引先管理</DialogTitle></DialogHeader>
                   <div className="space-y-6 py-4">
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">取引先一覧</h4>
-                      <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                        {clients.map((client) => (
-                          <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${client.color}`} />
-                              <span className="text-sm font-medium">{client.name}</span>
-                              <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4">
-                                {client.clientType === 'prime' ? '元請' : '下請'}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                onClick={() => setEditingClient(client)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => setClientToDelete({id: client.id, name: client.name})}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      {clients.map((client) => (
+                        <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-3 h-3 rounded-full ${client.color} shrink-0`} />
+                            <span className="text-sm font-medium truncate">{client.name}</span>
                           </div>
-                        ))}
-                        {clients.length === 0 && (
-                          <p className="text-sm text-muted-foreground text-center py-4">登録されている取引先はありません。</p>
-                        )}
-                      </div>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingClient(client)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setClientToDelete({id: client.id, name: client.name})}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-
                     <Separator />
-
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">
-                        {editingClient ? "取引先の編集" : "新規取引先の追加"}
-                      </h4>
-                      <ClientForm 
-                        initialClient={editingClient || undefined}
-                        onSubmit={handleAddOrUpdateClient}
-                        onCancel={() => {
-                          if (editingClient) setEditingClient(null)
-                          else setIsSettingsOpen(false)
-                        }}
-                      />
-                    </div>
+                    <ClientForm 
+                      initialClient={editingClient || undefined}
+                      onSubmit={handleAddOrUpdateClient}
+                      onCancel={() => setEditingClient(null)}
+                    />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -262,23 +180,15 @@ export function SidebarNav() {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-
       <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>取引先を削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              「{clientToDelete?.name}」を削除してもよろしいですか？この操作は取り消せません。
-            </AlertDialogDescription>
+            <AlertDialogDescription>「{clientToDelete?.name}」を削除します。操作は取り消せません。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDeleteClient} 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              削除する
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => { if (clientToDelete) deleteClientFirestore(db, clientToDelete.id); setClientToDelete(null); }} className="bg-destructive text-destructive-foreground">削除する</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

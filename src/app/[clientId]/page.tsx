@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { Plus, Search, Share2, Check } from "lucide-react"
+import { Plus, Search, Share2, Check, Building2, Users } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import { Button } from "@/components/ui/button"
@@ -45,24 +45,6 @@ export default function ClientDashboard() {
   const [copied, setCopied] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
-  React.useEffect(() => {
-    if (!isEditOpen && !taskToDelete) {
-      if (typeof document !== 'undefined') {
-        document.body.style.pointerEvents = 'auto'
-        document.body.style.overflow = 'auto'
-      }
-    }
-  }, [isEditOpen, taskToDelete])
-
-  React.useEffect(() => {
-    if (!isEditOpen) {
-      const timer = setTimeout(() => {
-        setEditingTask(null)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [isEditOpen])
-
   const clientRef = useMemoFirebase(() => doc(db, 'clients', clientId), [db, clientId]);
   const { data: client } = useDoc<Client>(clientRef);
 
@@ -73,9 +55,7 @@ export default function ClientDashboard() {
 
   const handleCreateTask = (data: Partial<Task>) => {
     if (!client) return;
-    
     setIsCreateOpen(false);
-    
     const now = new Date().toISOString();
     const newTask: Task = {
       id: generateId(),
@@ -91,34 +71,24 @@ export default function ClientDashboard() {
       createdAt: now,
       updatedAt: now,
     }
-    
     saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
     toast({ title: "タスクを作成しました" });
   }
 
   const handleUpdateTask = (data: Partial<Task>) => {
     if (!editingTask || !client) return;
-    
     setIsEditOpen(false);
-    
-    const updatedTask: Task = { 
-      ...editingTask, 
-      ...data, 
-      updatedAt: new Date().toISOString() 
-    }
-    
+    const updatedTask: Task = { ...editingTask, ...data, updatedAt: new Date().toISOString() }
     saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
     toast({ title: "タスクを更新しました" });
   }
 
-  const handleDeleteTask = (taskId: string) => {
-    setTaskToDelete(taskId);
-  }
+  const handleDeleteTask = (taskId: string) => setTaskToDelete(taskId)
 
   const confirmDeleteTask = () => {
     if (taskToDelete) {
       deleteTaskWithSync(db, taskToDelete, client?.dedicatedUrlIdentifier);
-      toast({ title: "タスクを削除しました", variant: "destructive" });
+      toast({ title: "削除しました", variant: "destructive" });
       setTaskToDelete(null);
     }
   }
@@ -126,232 +96,92 @@ export default function ClientDashboard() {
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     const task = tasks?.find(t => t.id === taskId);
     if (task && client) {
-      const updatedTask = { ...task, status, updatedAt: new Date().toISOString() };
-      saveTaskWithSync(db, updatedTask, client.dedicatedUrlIdentifier);
+      saveTaskWithSync(db, { ...task, status, updatedAt: new Date().toISOString() }, client.dedicatedUrlIdentifier);
       toast({ title: "ステータスを更新しました" });
     }
-  }
-
-  const handleEditClick = (task: Task) => {
-    setEditingTask(task);
-    setIsEditOpen(true);
   }
 
   const copyShareLink = async () => {
     if (!client) return;
     const url = `${window.location.origin}/view/${client.dedicatedUrlIdentifier}`;
-    
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: `NexTask | ${client.name} の業務フロー`,
-          text: `${client.name} 様のタスク進捗状況はこちらからご確認いただけます。`,
-          url: url,
-        });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          navigator.clipboard.writeText(url);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-          toast({ title: "共有URLをコピーしました" });
-        }
-      }
-    } else {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({ title: "共有URLをコピーしました" });
-    }
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ title: "URLをコピーしました" });
   }
 
-  const filteredTasks = React.useMemo(() => {
-    const searchLower = searchQuery.toLowerCase().trim();
-    if (!searchLower) return (tasks || []);
-
-    return (tasks || []).filter(t => {
-      const title = (t.title || "").toLowerCase();
-      const description = (t.description || "").toLowerCase();
-      const constructionType = (t.constructionType || "").toLowerCase();
-      
-      const matchText = title.includes(searchLower) || 
-                       description.includes(searchLower) ||
-                       constructionType.includes(searchLower);
-      
-      if (matchText) return true;
-
-      const normalizedSearch = searchLower.replace(/[\/\.]/g, '-');
-      const dateParts = normalizedSearch.split('-');
-      const paddedSearch = dateParts.map(part => {
-        if (/^\d{1,2}$/.test(part)) {
-          return part.padStart(2, '0');
-        }
-        return part;
-      }).join('-');
-
-      const matchDate = (t.receptionDate || "").includes(paddedSearch) || 
-                       (t.dueDate || "").includes(paddedSearch) ||
-                       (t.receptionDate || "").includes(normalizedSearch) ||
-                       (t.dueDate || "").includes(normalizedSearch);
-
-      return matchDate;
-    })
-  }, [tasks, searchQuery]);
-
-  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
-  const awaitingPaymentTasks = filteredTasks.filter(t => t.status === 'awaiting_payment')
-  const doneTasks = filteredTasks.filter(t => t.status === 'done')
+  const filteredTasks = tasks.filter(t => 
+    (t.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${client?.color || 'bg-gray-400'}`} />
-            <span className="text-xs md:text-sm font-medium text-muted-foreground">取引先</span>
-            {client?.clientType && (
-              <Badge variant="outline" className="text-[10px] py-0 h-4 ml-1">
-                {client.clientType === 'prime' ? '元請け' : '下請け'}
-              </Badge>
-            )}
+            <span className="text-sm font-medium text-muted-foreground">
+              {client?.clientType === 'prime' ? '元請け' : '下請け'}
+            </span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            {client?.name || '読み込み中...'} の業務フロー
-          </h2>
-          <p className="text-xs md:text-sm text-muted-foreground">タスクの進捗をリアルタイムで管理・更新します。</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{client?.name || '...'}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10 flex-1 md:flex-none">
+          <Button variant="outline" size="sm" onClick={copyShareLink} className="h-10">
             {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Share2 className="mr-2 h-4 w-4" />}
-            共有URLを
-            <span className="hidden sm:inline">コピー</span>
+            共有URLをコピー
           </Button>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="h-10 bg-primary hover:bg-primary/90 flex-1 md:flex-none">
-                <Plus className="mr-2 h-4 w-4" /> 新規タスク
-              </Button>
+              <Button className="h-10"><Plus className="mr-2 h-4 w-4" /> 新規タスク</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
-              <DialogHeader>
-                <DialogTitle>新しいタスクを作成</DialogTitle>
-              </DialogHeader>
-              <TaskForm 
-                onSubmit={handleCreateTask} 
-                onCancel={() => setIsCreateOpen(false)} 
-              />
+              <DialogHeader><DialogTitle>新しいタスク</DialogTitle></DialogHeader>
+              <TaskForm onSubmit={handleCreateTask} onCancel={() => setIsCreateOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="名前、工事内容、説明などで検索..." 
-            className="pl-9 bg-white border-border/50 text-sm" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input 
+          placeholder="検索..." 
+          className="pl-9" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      <Tabs defaultValue="in_progress" className="w-full">
-        <div className="overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-          <TabsList className="bg-muted/50 p-1 w-full justify-start md:justify-center">
-            <TabsTrigger value="in_progress" className="flex-1 min-w-[80px]">進行中 ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="pending" className="flex-1 min-w-[80px]">保留 ({pendingTasks.length})</TabsTrigger>
-            <TabsTrigger value="awaiting_payment" className="flex-1 min-w-[80px]">入金待ち ({awaitingPaymentTasks.length})</TabsTrigger>
-            <TabsTrigger value="done" className="flex-1 min-w-[80px]">完了 ({doneTasks.length})</TabsTrigger>
-            <TabsTrigger value="all" className="flex-1 min-w-[80px]">すべて ({filteredTasks.length})</TabsTrigger>
-          </TabsList>
-        </div>
-        
-        <TabsContent value="in_progress" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {inProgressTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="pending" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {pendingTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="awaiting_payment" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {awaitingPaymentTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="done" className="mt-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {doneTasks.map((task) => (
-              <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
-            ))}
-          </div>
-        </TabsContent>
-
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="bg-muted/50 w-full justify-start overflow-x-auto">
+          <TabsTrigger value="all" className="flex-1">すべて ({filteredTasks.length})</TabsTrigger>
+          <TabsTrigger value="in_progress" className="flex-1">進行中</TabsTrigger>
+          <TabsTrigger value="done" className="flex-1">完了</TabsTrigger>
+        </TabsList>
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={handleEditClick}
-                onDelete={handleDeleteTask}
-                onStatusChange={handleStatusChange}
-              />
+              <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setIsEditOpen(true); }} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
             ))}
           </div>
-          {!isLoading && filteredTasks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
-              <Plus className="h-12 w-12 mb-4 opacity-20" />
-              <p>タスクが見つかりませんでした。</p>
-            </div>
-          )}
         </TabsContent>
       </Tabs>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
-          <DialogHeader>
-            <DialogTitle>タスクを編集</DialogTitle>
-          </DialogHeader>
-          {editingTask && (
-            <TaskForm 
-              initialTask={editingTask} 
-              onSubmit={handleUpdateTask} 
-              onCancel={() => setIsEditOpen(false)} 
-            />
-          )}
+          <DialogHeader><DialogTitle>タスク編集</DialogTitle></DialogHeader>
+          {editingTask && <TaskForm initialTask={editingTask} onSubmit={handleUpdateTask} onCancel={() => setIsEditOpen(false)} />}
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>タスクを削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              このタスクを削除してもよろしいですか？この操作は取り消せません。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>削除しますか？</AlertDialogTitle></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDeleteTask} 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              削除する
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground">削除する</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
