@@ -4,7 +4,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Settings, Home, Trash2, Pencil } from "lucide-react"
+import { LayoutDashboard, Settings, Home, Trash2, Pencil, Building2, Users } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 import {
@@ -70,6 +70,9 @@ export function SidebarNav() {
       return a.name.localeCompare(b.name, "ja")
     })
   }, [rawClients])
+
+  const primeClients = React.useMemo(() => clients.filter(c => c.clientType === 'prime'), [clients]);
+  const subClients = React.useMemo(() => clients.filter(c => c.clientType === 'sub'), [clients]);
   
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
@@ -116,6 +119,25 @@ export function SidebarNav() {
     }
   }
 
+  const renderClientList = (clientList: Client[]) => (
+    <SidebarMenu>
+      {clientList.map((client) => (
+        <SidebarMenuItem key={client.id}>
+          <SidebarMenuButton 
+            asChild 
+            isActive={pathname.includes(`/${client.id}`)}
+            tooltip={client.name}
+          >
+            <Link href={`/${client.id}`}>
+              <div className={`w-2 h-2 rounded-full ${client.color}`} />
+              <span className="flex-1 truncate">{client.name}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  )
+
   return (
     <>
       <Sidebar collapsible="icon">
@@ -145,30 +167,23 @@ export function SidebarNav() {
           <SidebarSeparator className="mx-2" />
           
           <SidebarGroup>
-            <div className="flex items-center justify-between pr-2">
-              <SidebarGroupLabel>取引先別タスク</SidebarGroupLabel>
-            </div>
-            <SidebarMenu>
-              {clients.map((client) => (
-                <SidebarMenuItem key={client.id}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={pathname.includes(`/${client.id}`)}
-                    tooltip={client.name}
-                  >
-                    <Link href={`/${client.id}`}>
-                      <div className={`w-2 h-2 rounded-full ${client.color}`} />
-                      <span className="flex-1 truncate">{client.name}</span>
-                      {client.clientType && (
-                        <span className="text-[10px] opacity-60 font-normal">
-                          {client.clientType === 'prime' ? '元請' : '下請'}
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarGroupLabel className="flex items-center gap-1.5">
+              <Building2 className="h-3 w-3" /> 元請け
+            </SidebarGroupLabel>
+            {renderClientList(primeClients)}
+            {primeClients.length === 0 && (
+              <p className="px-4 py-2 text-[10px] text-muted-foreground italic group-data-[collapsible=icon]:hidden">なし</p>
+            )}
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center gap-1.5">
+              <Users className="h-3 w-3" /> 下請け
+            </SidebarGroupLabel>
+            {renderClientList(subClients)}
+            {subClients.length === 0 && (
+              <p className="px-4 py-2 text-[10px] text-muted-foreground italic group-data-[collapsible=icon]:hidden">なし</p>
+            )}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -188,15 +203,15 @@ export function SidebarNav() {
                   
                   <div className="space-y-6 py-4">
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium">取引先一覧（カラー順）</h4>
-                      <div className="space-y-2">
+                      <h4 className="text-sm font-medium">取引先一覧</h4>
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                         {clients.map((client) => (
                           <div key={client.id} className="flex items-center justify-between p-2 border rounded-md">
                             <div className="flex items-center gap-2">
                               <div className={`w-3 h-3 rounded-full ${client.color}`} />
                               <span className="text-sm font-medium">{client.name}</span>
                               <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4">
-                                {client.clientType === 'prime' ? '元請け' : '下請け'}
+                                {client.clientType === 'prime' ? '元請' : '下請'}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-1">
@@ -220,7 +235,7 @@ export function SidebarNav() {
                           </div>
                         ))}
                         {clients.length === 0 && (
-                          <p className="text-sm text-muted-foreground">登録されている取引先はありません。</p>
+                          <p className="text-sm text-muted-foreground text-center py-4">登録されている取引先はありません。</p>
                         )}
                       </div>
                     </div>
