@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, AlertCircle, RefreshCcw, Home } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, RefreshCcw } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function Error({
@@ -19,8 +19,7 @@ export default function Error({
 
   useEffect(() => {
     setMounted(true);
-    console.error("Client-side exception caught:", error);
-    // 共有URLかどうかを判定 (/view/ で始まる場合はパブリック)
+    console.error("Critical error captured in error.tsx:", error);
     setIsPublic(pathname?.startsWith('/view/') || false);
   }, [error, pathname]);
 
@@ -46,7 +45,6 @@ export default function Error({
             再読み込みしてリトライ
           </Button>
           
-          {/* 管理画面へのリンクは、現在のページが共有用でない場合のみ表示 */}
           {!isPublic && (
             <Button variant="outline" asChild className="w-full font-bold">
               <a href="/">
@@ -63,14 +61,12 @@ export default function Error({
           )}
         </div>
         
-        {process.env.NODE_ENV !== 'production' && (
-          <div className="pt-6 mt-6 border-t text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto">
-            <p className="font-bold mb-1">Debug Info:</p>
-            {error.message || "Unknown error"}
-            <br />
-            {error.stack}
-          </div>
-        )}
+        {/* デバッグ情報を常に表示（控えめな位置） */}
+        <div className="pt-6 mt-6 border-t text-[10px] text-left text-muted-foreground/50 font-mono break-all max-h-40 overflow-auto">
+          <p className="font-bold mb-1">Debug Info:</p>
+          {error?.message || "Unknown error"}
+          {error?.stack && <div className="mt-2">{error.stack}</div>}
+        </div>
       </div>
     </div>
   );

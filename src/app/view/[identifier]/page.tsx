@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
-import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, HardHat, Coins, Download, AlertCircle } from "lucide-react"
+import { CheckCircle2, Clock, Calendar, LayoutDashboard, FileText, Paperclip, Search, Eye, HardHat, Coins, Download, AlertCircle, Loader2 } from "lucide-react"
 import { format, isValid, parseISO } from "date-fns"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
@@ -35,6 +36,7 @@ export default function PublicClientView() {
   const params = useParams()
   const identifier = params?.identifier as string
   const db = useFirestore()
+  
   const [searchQuery, setSearchQuery] = React.useState("")
   const [mounted, setMounted] = React.useState(false)
 
@@ -45,12 +47,11 @@ export default function PublicClientView() {
   const tasksQuery = useMemoFirebase(() => {
     if (!identifier || !db) return null;
     try {
-      // パスが空でないことを確認
       const cleanId = String(identifier).trim();
-      if (!cleanId) return null;
+      if (!cleanId || cleanId === 'undefined') return null;
       return collection(db, 'client_task_views', cleanId, 'tasks');
     } catch (e) {
-      console.error("Firestore collection error:", e);
+      console.error("Firestore query creation error:", e);
       return null;
     }
   }, [db, identifier]);
@@ -62,12 +63,12 @@ export default function PublicClientView() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (error || (!isLoading && !tasksData && identifier)) {
+  if (error || (!isLoading && !tasksData && identifier && identifier !== 'undefined')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
         <Card className="max-w-md w-full border shadow-xl p-8 space-y-6 rounded-2xl">
@@ -92,17 +93,17 @@ export default function PublicClientView() {
 
   const filteredTasks = tasks.filter(t => {
     if (!t) return false;
-    const searchLower = searchQuery.toLowerCase().trim();
-    if (!searchLower) return true;
-    return (t.title || "").toLowerCase().includes(searchLower) || 
-           (t.description || "").toLowerCase().includes(searchLower) ||
-           (t.constructionType || "").toLowerCase().includes(searchLower);
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (t.title || "").toLowerCase().includes(q) || 
+           (t.description || "").toLowerCase().includes(q) ||
+           (t.constructionType || "").toLowerCase().includes(q);
   });
 
-  const inProgressTasks = filteredTasks.filter(t => t?.status === 'in_progress' || t?.status === 'todo')
-  const pendingTasks = filteredTasks.filter(t => t?.status === 'pending')
-  const awaitingPaymentTasks = filteredTasks.filter(t => t?.status === 'awaiting_payment')
-  const doneTasks = filteredTasks.filter(t => t?.status === 'done')
+  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.status === 'todo')
+  const pendingTasks = filteredTasks.filter(t => t.status === 'pending')
+  const awaitingPaymentTasks = filteredTasks.filter(t => t.status === 'awaiting_payment')
+  const doneTasks = filteredTasks.filter(t => t.status === 'done')
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -131,7 +132,7 @@ export default function PublicClientView() {
 
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <Tabs defaultValue="in_progress" className="w-full">
@@ -144,31 +145,31 @@ export default function PublicClientView() {
             </TabsList>
 
             <div className="mt-6">
-              <TabsContent value="in_progress" className="mt-0">
+              <TabsContent value="in_progress">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {inProgressTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
                 </div>
                 {inProgressTasks.length === 0 && <EmptyState />}
               </TabsContent>
-              <TabsContent value="pending" className="mt-0">
+              <TabsContent value="pending">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {pendingTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
                 </div>
                 {pendingTasks.length === 0 && <EmptyState />}
               </TabsContent>
-              <TabsContent value="awaiting_payment" className="mt-0">
+              <TabsContent value="awaiting_payment">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {awaitingPaymentTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
                 </div>
                 {awaitingPaymentTasks.length === 0 && <EmptyState />}
               </TabsContent>
-              <TabsContent value="done" className="mt-0">
+              <TabsContent value="done">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {doneTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
                 </div>
                 {doneTasks.length === 0 && <EmptyState />}
               </TabsContent>
-              <TabsContent value="all" className="mt-0">
+              <TabsContent value="all">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {filteredTasks.map((task) => <PublicTaskCard key={task.id} task={task} />)}
                 </div>
@@ -191,11 +192,6 @@ function EmptyState() {
 }
 
 function PublicTaskCard({ task }: { task: Task }) {
-  const [mounted, setMounted] = React.useState(false)
-  React.useEffect(() => { setMounted(true) }, [])
-
-  if (!task || !mounted) return <div className="h-48 rounded-xl bg-muted/20 animate-pulse" />;
-
   const config = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.in_progress
   const StatusIcon = config.icon
   
@@ -243,12 +239,12 @@ function PublicTaskCard({ task }: { task: Task }) {
             </Badge>
           )}
         </div>
-        <CardTitle className="text-lg font-bold line-clamp-2 leading-snug">{(task.title || "").trim() || "無題のタスク"}</CardTitle>
+        <CardTitle className="text-lg font-bold line-clamp-2 leading-snug">{task.title || "無題のタスク"}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 pl-6 flex-1 flex flex-col">
         <p className="text-xs text-muted-foreground line-clamp-3 mb-4 min-h-[3rem] leading-relaxed">
-          {(task.description || "").trim() || "詳細説明はありません。"}
+          {task.description || "詳細説明はありません。"}
         </p>
         
         <Dialog>
@@ -258,9 +254,9 @@ function PublicTaskCard({ task }: { task: Task }) {
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-2xl">
-            <DialogHeader><DialogTitle className="text-xl">{(task.title || "").trim() || "タスク詳細"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="text-xl">{task.title || "タスク詳細"}</DialogTitle></DialogHeader>
             <ScrollArea className="max-h-[60vh] mt-4 p-4 border rounded-xl bg-muted/10">
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">{(task.description || "").trim() || "詳細説明はありません。"}</div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{task.description || "詳細説明はありません。"}</div>
             </ScrollArea>
           </DialogContent>
         </Dialog>
