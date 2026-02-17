@@ -3,10 +3,11 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users, Plus } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +23,8 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { TaskCard } from "@/components/task-card"
 import { toast } from "@/hooks/use-toast"
-import { saveTaskWithSync, deleteTaskWithSync } from "@/lib/task-service"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { saveTaskWithSync, deleteTaskWithSync, generateId } from "@/lib/task-service"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
 
 const COLOR_ORDER: Record<string, number> = {
@@ -41,6 +42,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null)
 
@@ -89,6 +91,36 @@ export default function Home() {
       (t.constructionType || "").toLowerCase().includes(searchLower)
     );
   }, [allTasks, searchQuery]);
+
+  const handleCreateTask = (data: Partial<Task>) => {
+    if (!data.clientId) {
+      toast({ title: "取引先を選択してください", variant: "destructive" });
+      return;
+    }
+
+    const client = clients.find(c => c.id === data.clientId);
+    if (!client) return;
+
+    const now = new Date().toISOString();
+    const newTask: Task = {
+      id: generateId(),
+      clientId: data.clientId,
+      title: data.title || "",
+      description: data.description || "",
+      constructionType: data.constructionType || "",
+      status: data.status || "in_progress",
+      receptionDate: data.receptionDate || now.split('T')[0],
+      dueDate: data.dueDate || now.split('T')[0],
+      subtasks: [],
+      pdfs: data.pdfs || [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
+    setIsCreateOpen(false);
+    toast({ title: "タスクを作成しました" });
+  };
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     const task = (allTasks || []).find(t => t.id === taskId);
@@ -162,6 +194,24 @@ export default function Home() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-11 shadow-md font-bold">
+                <Plus className="mr-2 h-5 w-5" />
+                新規タスク作成
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] w-[95vw] rounded-xl">
+              <DialogHeader>
+                <DialogTitle>新しいタスクを登録</DialogTitle>
+              </DialogHeader>
+              <TaskForm 
+                clients={clients} 
+                onSubmit={handleCreateTask} 
+                onCancel={() => setIsCreateOpen(false)} 
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -252,6 +302,7 @@ export default function Home() {
           {editingTask && (
             <TaskForm 
               initialTask={editingTask} 
+              fixedClientId={editingTask.clientId}
               onSubmit={(data) => {
                 const client = (clients || []).find(c => c.id === editingTask.clientId);
                 if (client) {

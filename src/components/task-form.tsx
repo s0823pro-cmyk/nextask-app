@@ -26,10 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Task, TaskPdf } from "@/lib/types"
+import { Task, TaskPdf, Client } from "@/lib/types"
 import { toast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
+  clientId: z.string().min(1, { message: "取引先を選択してください" }),
   title: z.string().min(2, { message: "タイトルは2文字以上で入力してください" }),
   description: z.string(),
   constructionType: z.string().optional(),
@@ -44,16 +45,19 @@ const formSchema = z.object({
 
 interface TaskFormProps {
   initialTask?: Task
+  fixedClientId?: string
+  clients?: Client[]
   onSubmit: (data: Partial<Task>) => void
   onCancel: () => void
 }
 
-export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
+export function TaskForm({ initialTask, fixedClientId, clients, onSubmit, onCancel }: TaskFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      clientId: fixedClientId || initialTask?.clientId || "",
       title: initialTask?.title || "",
       description: initialTask?.description || "",
       constructionType: initialTask?.constructionType || "",
@@ -115,7 +119,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
       <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="space-y-5 md:space-y-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <FormLabel className="text-sm font-semibold">基本情報</FormLabel>
+            <FormLabel className="text-sm font-semibold">添付資料</FormLabel>
             {currentPdfs.length < 3 && (
               <Button
                 type="button"
@@ -150,11 +154,38 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
                 </button>
               </div>
             ))}
-            {currentPdfs.length === 0 && (
-              <p className="text-[10px] text-muted-foreground italic">添付されたPDFはありません（最大3つ）</p>
-            )}
           </div>
         </div>
+
+        {clients && !fixedClientId && (
+          <FormField
+            control={form.control}
+            name="clientId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold">取引先</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="取引先を選択してください" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${client.color}`} />
+                          {client.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -163,7 +194,7 @@ export function TaskForm({ initialTask, onSubmit, onCancel }: TaskFormProps) {
             <FormItem>
               <FormLabel className="text-sm font-semibold">タスク名</FormLabel>
               <FormControl>
-                <Input placeholder="例: 月次報告書の作成" {...field} className="text-sm" />
+                <Input placeholder="例: 原状回復工事の開始" {...field} className="text-sm" />
               </FormControl>
               <FormMessage />
             </FormItem>
