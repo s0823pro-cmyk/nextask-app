@@ -47,7 +47,7 @@ export default function PublicClientView() {
     if (!identifier || !db) return null;
     try {
       const cleanId = String(identifier).trim();
-      if (!cleanId || cleanId === 'undefined') return null;
+      if (!cleanId || cleanId === 'undefined' || cleanId === '[identifier]') return null;
       return collection(db, 'client_task_views', cleanId, 'tasks');
     } catch (e) {
       return null;
@@ -66,6 +66,7 @@ export default function PublicClientView() {
     );
   }
 
+  // エラー時やパスが不正な場合の表示
   if (error || (!isLoading && !tasksData && identifier && identifier !== 'undefined')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
@@ -203,7 +204,6 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }
 
-  // 同期的なPDF処理ロジック (スマートフォン対応)
   const handlePdfAction = (data: string) => {
     try {
       const parts = data.split(',');
@@ -220,7 +220,6 @@ function PublicTaskCard({ task }: { task: Task }) {
       const blob = new Blob([ab], { type: mimeString });
       const url = URL.createObjectURL(blob);
       
-      // スマートフォンでも確実に別タブで開くためにリンクを生成してクリック
       const link = document.createElement("a");
       link.href = url;
       link.target = "_blank";
@@ -229,7 +228,6 @@ function PublicTaskCard({ task }: { task: Task }) {
       link.click();
       document.body.removeChild(link);
       
-      // リソース解放
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
       console.error("PDF viewing error:", err);
