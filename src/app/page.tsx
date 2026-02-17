@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users, Plus } from "lucide-react"
+import { ArrowRight, Clock, Search, Activity, Coins, AlertTriangle, Building2, Users, Plus, X } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,7 @@ import { toast } from "@/hooks/use-toast"
 import { saveTaskWithSync, deleteTaskWithSync, generateId } from "@/lib/task-service"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { TaskForm } from "@/components/task-form"
+import { cn } from "@/lib/utils"
 
 const COLOR_ORDER: Record<string, number> = {
   "bg-blue-500": 1,
@@ -35,10 +36,13 @@ const COLOR_ORDER: Record<string, number> = {
   "bg-pink-500": 6,
 }
 
+type FilterType = "none" | "today" | "in_progress" | "awaiting_payment" | "overdue"
+
 export default function Home() {
   const db = useFirestore()
   
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [activeFilter, setActiveFilter] = React.useState<FilterType>("none")
   const [editingTask, setEditingTask] = React.useState<Task | null>(null)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
@@ -67,32 +71,53 @@ export default function Home() {
   const primeClients = React.useMemo(() => sortedClients.filter(c => c.clientType === 'prime'), [sortedClients]);
   const subClients = React.useMemo(() => sortedClients.filter(c => !c.clientType || c.clientType === 'sub'), [sortedClients]);
 
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const todayStr = now.toISOString().split('T')[0]
+
   const stats = React.useMemo(() => {
     if (!mounted) return { todayTasks: 0, inProgressTasks: 0, awaitingPaymentTasks: 0, overdueTasks: 0 }
-    const now = new Date()
-    const todayStr = now.toISOString().split('T')[0]
     const tasks = allTasks || []
     
     return {
-      todayTasks: tasks.filter(t => t.dueDate === todayStr && (t.status === 'todo' || t.status === 'in_progress')).length,
+      todayTasks: tasks.filter(t => t.dueDate === todayStr && t.status !== 'done').length,
       inProgressTasks: tasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
       awaitingPaymentTasks: tasks.filter(t => t.status === 'awaiting_payment').length,
       overdueTasks: tasks.filter(t => t.status !== 'done' && t.status !== 'awaiting_payment' && t.dueDate && t.dueDate < todayStr).length
     }
-  }, [allTasks, mounted])
+  }, [allTasks, mounted, todayStr])
 
   const filteredTasks = React.useMemo(() => {
+    let result = (allTasks || [])
+
+    // カテゴリフィルター適用
+    if (activeFilter !== "none") {
+      result = result.filter(t => {
+        switch (activeFilter) {
+          case "today": return t.dueDate === todayStr && t.status !== 'done'
+          case "in_progress": return t.status === 'todo' || t.status === 'in_progress'
+          case "awaiting_payment": return t.status === 'awaiting_payment'
+          case "overdue": return t.status !== 'done' && t.status !== 'awaiting_payment' && t.dueDate && t.dueDate < todayStr
+          default: return true
+        }
+      })
+    }
+
+    // 検索クエリ適用
     const searchLower = searchQuery.toLowerCase().trim();
-    if (!searchLower) return [];
-    return (allTasks || []).filter(t => {
-      if (!t) return false;
-      return (
-        (t.title || "").toLowerCase().includes(searchLower) || 
-        (t.description || "").toLowerCase().includes(searchLower) ||
-        (t.constructionType || "").toLowerCase().includes(searchLower)
-      );
-    });
-  }, [allTasks, searchQuery]);
+    if (searchLower) {
+      result = result.filter(t => {
+        if (!t) return false;
+        return (
+          (t.title || "").toLowerCase().includes(searchLower) || 
+          (t.description || "").toLowerCase().includes(searchLower) ||
+          (t.constructionType || "").toLowerCase().includes(searchLower)
+        );
+      });
+    }
+
+    return result;
+  }, [allTasks, searchQuery, activeFilter, todayStr]);
 
   const handleCreateTask = (data: Partial<Task>) => {
     if (!data.clientId) {
@@ -103,7 +128,7 @@ export default function Home() {
     const client = clients.find(c => c.id === data.clientId);
     if (!client) return;
 
-    const now = new Date().toISOString();
+    const currentNow = new Date().toISOString();
     const newTask: Task = {
       id: generateId(),
       clientId: data.clientId,
@@ -111,12 +136,12 @@ export default function Home() {
       description: data.description || "",
       constructionType: data.constructionType || "",
       status: data.status || "in_progress",
-      receptionDate: data.receptionDate || now.split('T')[0],
-      dueDate: data.dueDate || now.split('T')[0],
+      receptionDate: data.receptionDate || currentNow.split('T')[0],
+      dueDate: data.dueDate || currentNow.split('T')[0],
       subtasks: [],
       pdfs: data.pdfs || [],
-      createdAt: now,
-      updatedAt: now,
+      createdAt: currentNow,
+      updatedAt: currentNow,
     };
 
     saveTaskWithSync(db, newTask, client.dedicatedUrlIdentifier);
@@ -178,6 +203,11 @@ export default function Home() {
     </div>
   )
 
+  const toggleFilter = (filter: FilterType) => {
+    setActiveFilter(prev => prev === filter ? "none" : filter)
+    if (activeFilter !== filter) setSearchQuery("") // フィルター切り替え時に検索をクリア
+  }
+
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -193,7 +223,10 @@ export default function Home() {
               placeholder="案件名、工事内容、説明で検索..." 
               className="pl-9 h-11 bg-white border-border/50 shadow-sm" 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                if (e.target.value) setActiveFilter("none") // 検索時は統計フィルターを解除
+              }}
             />
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -217,58 +250,99 @@ export default function Home() {
         </div>
       </div>
 
-      {!searchQuery && (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">今日のタスク</CardTitle>
-              <Clock className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold">{stats.todayTasks}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">進行中</CardTitle>
-              <Activity className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold">{stats.inProgressTasks}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">入金待ち</CardTitle>
-              <Coins className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">期限切れ</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card 
+          className={cn(
+            "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+            activeFilter === "today" ? "ring-2 ring-primary bg-primary/5" : ""
+          )}
+          onClick={() => toggleFilter("today")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs md:text-sm font-bold">今日のタスク</CardTitle>
+            <Clock className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold">{stats.todayTasks}</div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+            activeFilter === "in_progress" ? "ring-2 ring-primary bg-primary/5" : ""
+          )}
+          onClick={() => toggleFilter("in_progress")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs md:text-sm font-bold">進行中</CardTitle>
+            <Activity className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold">{stats.inProgressTasks}</div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+            activeFilter === "awaiting_payment" ? "ring-2 ring-amber-500 bg-amber-50" : ""
+          )}
+          onClick={() => toggleFilter("awaiting_payment")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs md:text-sm font-bold">入金待ち</CardTitle>
+            <Coins className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold text-amber-600">{stats.awaitingPaymentTasks}</div>
+          </CardContent>
+        </Card>
+        <Card 
+          className={cn(
+            "border-border/50 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]",
+            activeFilter === "overdue" ? "ring-2 ring-destructive bg-destructive/5" : ""
+          )}
+          onClick={() => toggleFilter("overdue")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs md:text-sm font-bold text-destructive">期限切れ</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdueTasks}</div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6">
-        {searchQuery ? (
+        {(searchQuery || activeFilter !== "none") ? (
           <Card className="border-border/50">
-            <CardHeader><CardTitle className="text-lg">検索結果: {filteredTasks.length}件</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                {activeFilter !== "none" ? (
+                  <>
+                    <span className="font-bold">
+                      {activeFilter === "today" && "今日のタスク"}
+                      {activeFilter === "in_progress" && "進行中のタスク"}
+                      {activeFilter === "awaiting_payment" && "入金待ちのタスク"}
+                      {activeFilter === "overdue" && "期限切れのタスク"}
+                    </span>
+                    <span className="text-muted-foreground text-sm font-normal">({filteredTasks.length}件)</span>
+                  </>
+                ) : (
+                  <>検索結果: {filteredTasks.length}件</>
+                )}
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => { setActiveFilter("none"); setSearchQuery(""); }}>
+                <X className="h-4 w-4 mr-2" /> 解除して戻る
+              </Button>
+            </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTasks.map((task) => (
                   <TaskCard key={task.id} task={task} onEdit={handleEditClick} onDelete={handleDeleteTask} onStatusChange={handleStatusChange} />
                 ))}
                 {filteredTasks.length === 0 && (
-                  <p className="col-span-full text-center py-12 text-muted-foreground">一致するタスクはありません。</p>
+                  <p className="col-span-full text-center py-12 text-muted-foreground">該当するタスクはありません。</p>
                 )}
               </div>
             </CardContent>
