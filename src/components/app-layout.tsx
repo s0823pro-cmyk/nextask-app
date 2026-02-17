@@ -52,7 +52,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 管理者チェック
+  // 管理者チェック (s0823.pro@gmail.com のみ許可)
   const isAuthorizedAdmin = user && !user.isAnonymous && user.email && ALLOWED_ADMINS.includes(user.email);
 
   if (!isAuthorizedAdmin) {
@@ -88,26 +88,32 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               className="w-full font-bold shadow-md h-12" 
               disabled={isLoggingIn}
               onClick={async () => {
+                if (isLoggingIn) return;
                 setIsLoggingIn(true);
                 const provider = new GoogleAuthProvider();
+                // ログイン画面の選択を強制させる
+                provider.setCustomParameters({ prompt: 'select_account' });
+                
                 try {
                   await signInWithPopup(auth, provider);
                   toast({ title: "ログインに成功しました" });
                 } catch (error: any) {
-                  console.error("Login error:", error);
+                  console.error("Login error detail:", error);
+                  let errorMessage = "認証中にエラーが発生しました。しばらく時間をおいて試すか、Firebaseの設定を確認してください。";
+                  
                   if (error.code === 'auth/popup-blocked') {
-                    toast({
-                      title: "ブロックされました",
-                      description: "ブラウザのポップアップブロックを解除してください。",
-                      variant: "destructive"
-                    });
-                  } else {
-                    toast({
-                      title: "ログイン失敗",
-                      description: "認証中にエラーが発生しました。",
-                      variant: "destructive"
-                    });
+                    errorMessage = "ブラウザのポップアップブロックを解除してください。";
+                  } else if (error.code === 'auth/unauthorized-domain') {
+                    errorMessage = "このドメインはFirebaseで許可されていません。コンソールの認証設定を確認してください。";
+                  } else if (error.code === 'auth/operation-not-allowed') {
+                    errorMessage = "Googleログインが有効になっていません。Firebaseコンソールで有効にしてください。";
                   }
+                  
+                  toast({
+                    title: "ログイン失敗",
+                    description: errorMessage,
+                    variant: "destructive"
+                  });
                 } finally {
                   setIsLoggingIn(false);
                 }
