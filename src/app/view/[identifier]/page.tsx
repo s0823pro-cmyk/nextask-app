@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -14,7 +13,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection } from "firebase/firestore"
@@ -62,9 +62,7 @@ export default function PublicClientView() {
     );
   }
 
-  const isInvalidIdentifier = !isLoading && !tasksData && identifier && (identifier === 'undefined' || identifier === '[identifier]');
-
-  if (error || isInvalidIdentifier) {
+  if (error || (!isLoading && !tasksData && identifier && (identifier === 'undefined' || identifier === '[identifier]'))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center">
         <Card className="max-w-md w-full border shadow-xl p-8 space-y-6 rounded-2xl">
@@ -201,7 +199,8 @@ function PublicTaskCard({ task }: { task: Task }) {
     }
   }
 
-  const handlePdfAction = (data: string) => {
+  // スマートフォン対応PDF閲覧ロジック
+  const handlePdfView = (data: string) => {
     try {
       const parts = data.split(',');
       if (parts.length < 2) return;
@@ -217,17 +216,20 @@ function PublicTaskCard({ task }: { task: Task }) {
       const blob = new Blob([ab], { type: mimeString });
       const url = URL.createObjectURL(blob);
       
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
+      const win = window.open(url, '_blank');
+      if (!win) {
+        // ポップアップがブロックされた場合のフォールバック
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        document.body.appendChild(link);
+        link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
+      }
+
+      // メモリ解放（少し遅らせて実行）
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       console.error("PDF viewing error:", err);
     }
@@ -317,7 +319,7 @@ function PublicTaskCard({ task }: { task: Task }) {
                     variant="outline" 
                     size="sm" 
                     className="w-full text-[10px] h-10 justify-start px-3 bg-primary/5 border-primary/10 overflow-hidden font-bold hover:bg-primary/10 text-primary" 
-                    onClick={() => handlePdfAction(pdf.data)}
+                    onClick={() => handlePdfView(pdf.data)}
                   >
                     <Paperclip className="w-3 h-3 mr-2 shrink-0 opacity-70" />
                     <span className="truncate">{pdf.name}</span>
